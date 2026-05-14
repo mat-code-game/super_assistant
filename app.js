@@ -51,7 +51,21 @@ modeBtns.forEach(btn => {
         modeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
+        
+        // Cacher les résultats précédents
         resultsArea.style.display = 'none';
+        
+        // Gestion de l'affichage selon le mode
+        if (currentMode === 'chat' || currentMode === 'alarm') {
+            dropZone.style.display = 'none';
+            analyzeBtn.style.display = 'none';
+            // Affichage immédiat pour ces modes
+            displayResults({}); 
+        } else {
+            dropZone.style.display = 'flex';
+            analyzeBtn.style.display = 'block';
+        }
+        
         console.log("Mode actuel:", currentMode);
     });
 });
@@ -236,6 +250,13 @@ async function callGroq(apiKey, base64Image) {
         prompt = `Analyse cette pièce ou appareil. Donne un conseil concret pour économiser de l'énergie ici.
         Réponds UNIQUEMENT au format JSON :
         {"title": "Éco-Conseil", "content": "### Astuce..."}`;
+    } else if (currentMode === 'monuments') {
+        prompt = `Analyse cette photo de monument ou lieu historique. Identifie-le et raconte son histoire de façon intéressante.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Guide Touristique", "content": "### Monument... ### Histoire..."}`;
+    } else if (currentMode === 'alarm') {
+        // Le mode alarme est géré par l'interface spéciale
+        return;
     }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -268,6 +289,8 @@ function displayResults(data) {
     resultsArea.style.display = 'block';
     cuisineResults.style.display = 'none';
     budgetResults.style.display = 'none';
+    document.getElementById('alarm-results').style.display = 'none';
+    document.getElementById('chat-results').style.display = 'none';
     const genericArea = document.getElementById('generic-results');
     genericArea.style.display = 'none';
 
@@ -298,7 +321,17 @@ function displayResults(data) {
                 list.appendChild(tr);
             });
         }
+    } else if (currentMode === 'alarm') {
+        document.getElementById('alarm-results').style.display = 'block';
+        dropZone.style.display = 'none';
+        analyzeBtn.style.display = 'none';
+    } else if (currentMode === 'chat') {
+        document.getElementById('chat-results').style.display = 'block';
+        dropZone.style.display = 'none';
+        analyzeBtn.style.display = 'none';
     } else {
+        dropZone.style.display = 'flex';
+        analyzeBtn.style.display = 'block';
         genericArea.style.display = 'block';
         // Fallback si les clés sont légèrement différentes
         const title = data.title || data.nom || data.sujet || "Analyse terminée";
@@ -326,3 +359,87 @@ function displayResults(data) {
     
     resultsArea.scrollIntoView({ behavior: 'smooth' });
 }
+
+// --- Système de Réveil & Chat ---
+let alarmTime = null;
+let alarmInterval = null;
+
+document.getElementById('set-alarm').addEventListener('click', () => {
+    alarmTime = document.getElementById('alarm-time').value;
+    if (!alarmTime) return alert("Choisis une heure !");
+    
+    document.getElementById('alarm-status').textContent = `Réveil réglé pour ${alarmTime}`;
+    if (alarmInterval) clearInterval(alarmInterval);
+    
+    alarmInterval = setInterval(() => {
+        const now = new Date();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        if (currentTime === alarmTime) {
+            clearInterval(alarmInterval);
+            triggerAlarm();
+        }
+    }, 1000);
+});
+
+async function triggerAlarm() {
+    // On bascule automatiquement sur le chat pour le réveil
+    currentMode = 'chat';
+    modeBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mode === 'chat') btn.classList.add('active');
+    });
+    
+    // On affiche la zone de chat
+    document.getElementById('alarm-results').style.display = 'none';
+    document.getElementById('chat-results').style.display = 'block';
+    resultsArea.style.display = 'block';
+    
+    const msg = "Bonjour ! C'est l'heure de se réveiller ! Comment tu te sens ce matin ?";
+    addChatMessage('ai', msg);
+    speak(msg);
+}
+
+function addChatMessage(role, text) {
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = `message msg-${role}`;
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR';
+    window.speechSynthesis.speak(utterance);
+}
+
+document.getElementById('send-chat').addEventListener('click', async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    input.value = "";
+    addChatMessage('user', text);
+    
+    const apiKey = getApiKey();
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche." },
+                    { role: "user", content: text }
+                ]
+            })
+        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+        addChatMessage('ai', reply);
+        speak(reply);
+    } catch (e) {
+        addChatMessage('ai', "Désolé, j'ai un petit souci de connexion...");
+    }
+});

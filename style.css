@@ -94,6 +94,86 @@ header p {
 .mode-btn.active[data-mode="taches"] { background: #74b9ff; color: white; }
 .mode-btn.active[data-mode="sante"] { background: #ff7675; color: white; }
 .mode-btn.active[data-mode="energie"] { background: #ffeaa7; color: #333; }
+.mode-btn.active[data-mode="monuments"] { background: #0984e3; color: white; }
+.mode-btn.active[data-mode="alarm"] { background: #e67e22; color: white; }
+.mode-btn.active[data-mode="chat"] { background: #9b59b6; color: white; }
+
+/* Alarm & Chat */
+.alarm-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.alarm-picker {
+    font-size: 2.5rem;
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid #eee;
+    text-align: center;
+    font-family: 'Outfit', sans-serif;
+    color: var(--primary);
+}
+
+.chat-container {
+    height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(0,0,0,0.03);
+    border-radius: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    padding: 10px 15px;
+    border-radius: 15px;
+    max-width: 80%;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.msg-ai {
+    background: white;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.msg-user {
+    background: var(--primary);
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-input-zone {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input-zone input {
+    flex: 1;
+    padding: 12px 15px;
+    border-radius: 25px;
+    border: 1px solid #ddd;
+}
+
+.chat-input-zone button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
 
 /* Container */
 .main-card {

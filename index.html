@@ -92,6 +92,18 @@
             <i data-lucide="zap"></i>
             <span>Énergie</span>
         </button>
+        <button class="mode-btn" data-mode="monuments">
+            <i data-lucide="landmark"></i>
+            <span>Monuments</span>
+        </button>
+        <button class="mode-btn" data-mode="alarm">
+            <i data-lucide="alarm-clock"></i>
+            <span>Réveil</span>
+        </button>
+        <button class="mode-btn" data-mode="chat">
+            <i data-lucide="message-circle"></i>
+            <span>Ami IA</span>
+        </button>
     </div>
 
     <main class="main-card">
@@ -153,6 +165,30 @@
                     <h2 id="generic-title">Résultat</h2>
                 </div>
                 <div id="generic-content" class="markdown-content"></div>
+            </div>
+
+            <div id="alarm-results" style="display: none;">
+                <div class="result-header">
+                    <h2>⏰ Réveil</h2>
+                    <p>Réglez l'heure de votre alarme.</p>
+                </div>
+                <div class="alarm-setup">
+                    <input type="time" id="alarm-time" class="alarm-picker">
+                    <button class="btn-action" id="set-alarm" style="background: var(--primary);">Activer le Réveil</button>
+                </div>
+                <div id="alarm-status" style="text-align: center; margin-top: 10px; font-weight: 600; color: var(--primary);"></div>
+            </div>
+
+            <div id="chat-results" style="display: none;">
+                <div class="result-header">
+                    <h2>💬 Votre Ami IA</h2>
+                    <p>Discutez de tout et de rien avec votre assistant.</p>
+                </div>
+                <div id="chat-messages" class="chat-container"></div>
+                <div class="chat-input-zone">
+                    <input type="text" id="chat-input" placeholder="Discuter...">
+                    <button id="send-chat"><i data-lucide="send"></i></button>
+                </div>
             </div>
         </section>
     </main>
