@@ -128,9 +128,20 @@ analyzeBtn.addEventListener('click', async () => {
 // Settings Logic
 openSettings.addEventListener('click', () => settingsModal.style.display = 'flex');
 closeSettings.addEventListener('click', () => settingsModal.style.display = 'none');
+document.getElementById('close-modal-x').addEventListener('click', () => settingsModal.style.display = 'none');
+document.getElementById('close-results').addEventListener('click', () => resultsArea.style.display = 'none');
+
 saveKeyBtn.addEventListener('click', () => {
     setApiKey(apiKeyInput.value.trim());
     settingsModal.style.display = 'none';
+});
+
+document.getElementById('hide-console').addEventListener('click', () => {
+    if (typeof eruda !== 'undefined') {
+        eruda.destroy();
+        alert("Console désactivée. Rechargez la page pour la retrouver.");
+        settingsModal.style.display = 'none';
+    }
 });
 
 // --- Functions ---
