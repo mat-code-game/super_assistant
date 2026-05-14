@@ -37,45 +37,51 @@ header p {
     opacity: 0.7;
 }
 
-/* Selector */
-.mode-selector {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 30px;
-    justify-content: center;
+/* Grid Layout for Modes */
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 25px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .mode-btn {
-    flex: 1;
-    max-width: 200px;
-    padding: 15px;
+    padding: 12px;
     border: none;
-    border-radius: 18px;
+    border-radius: 16px;
     background: var(--white);
     color: var(--text);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     box-shadow: var(--shadow);
     font-weight: 600;
+    font-size: 0.85rem;
 }
 
 .mode-btn i {
-    font-size: 1.5rem;
+    width: 20px;
+    height: 20px;
 }
 
-.mode-btn.active[data-mode="cuisine"] {
-    background: var(--primary);
-    color: white;
+.mode-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
 }
 
-.mode-btn.active[data-mode="budget"] {
-    background: var(--secondary);
-    color: white;
-}
+.mode-btn.active[data-mode="cuisine"] { background: #e67e22; color: white; }
+.mode-btn.active[data-mode="budget"] { background: #2980b9; color: white; }
+.mode-btn.active[data-mode="minecraft"] { background: #27ae60; color: white; }
+.mode-btn.active[data-mode="etudes"] { background: #8e44ad; color: white; }
+.mode-btn.active[data-mode="dev"] { background: #2c3e50; color: white; }
+.mode-btn.active[data-mode="style"] { background: #d35400; color: white; }
+.mode-btn.active[data-mode="puzzles"] { background: #c0392b; color: white; }
 
 /* Container */
 .main-card {
@@ -233,7 +239,16 @@ header p {
     margin-right: 10px;
 }
 
-@keyframes rotation {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.markdown-content {
+    line-height: 1.6;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    color: #444;
+}
+
+.markdown-content h3 {
+    margin: 15px 0 8px;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
 }

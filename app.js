@@ -114,32 +114,33 @@ async function callGroq(apiKey, base64Image) {
     
     let prompt = "";
     if (currentMode === 'cuisine') {
-        prompt = `Analyse cette photo de nourriture/frigo. 
-        1. Liste les ingrédients principaux visibles (en français).
-        2. Propose 3 recettes simples et détaillées utilisant ces ingrédients.
+        prompt = `Analyse cette photo de nourriture. Liste les ingrédients principaux et propose 3 recettes simples (Titre + Étapes). 
         Réponds UNIQUEMENT au format JSON : 
-        {
-            "ingredients": ["ingrédient 1", "ingrédient 2"],
-            "recipes": [
-                {"title": "Titre Recette 1", "steps": "Étapes de préparation..."},
-                {"title": "Titre Recette 2", "steps": "Étapes de préparation..."}
-            ]
-        }`;
-    } else {
-        prompt = `Analyse ce ticket de caisse.
-        1. Extrait le nom du marchand, la date, le montant total et la devise.
-        2. Liste les articles et leurs prix si lisibles.
+        {"ingredients": ["..."], "recipes": [{"title": "...", "steps": "..."}]}`;
+    } else if (currentMode === 'budget') {
+        prompt = `Analyse ce ticket de caisse. Extrait le marchand, la date, le total et les articles.
         Réponds UNIQUEMENT au format JSON :
-        {
-            "merchant": "Nom",
-            "date": "Date",
-            "total": "Montant",
-            "currency": "€",
-            "items": [
-                {"name": "Article 1", "price": "1.50"},
-                {"name": "Article 2", "price": "2.00"}
-            ]
-        }`;
+        {"merchant": "...", "date": "...", "total": "...", "currency": "€", "items": [{"name": "...", "price": "..."}]}`;
+    } else if (currentMode === 'minecraft') {
+        prompt = `Analyse cette photo d'architecture. Donne des conseils pour la reproduire dans Minecraft (blocs, dimensions, étapes).
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Guide Minecraft", "content": "### Blocs suggérés... ### Étapes..."}`;
+    } else if (currentMode === 'etudes') {
+        prompt = `Analyse cet exercice. Explique la méthode de résolution sans donner la réponse finale.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Aide aux Études", "content": "### Concept... ### Méthode..."}`;
+    } else if (currentMode === 'dev') {
+        prompt = `Analyse ce code. Transcris-le et propose des corrections ou explications.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Analyse de Code", "content": "### Code... ### Explications..."}`;
+    } else if (currentMode === 'style') {
+        prompt = `Analyse ce look. Donne un avis sur les couleurs et suggère des accessoires.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Conseils Style", "content": "### Analyse... ### Suggestions..."}`;
+    } else if (currentMode === 'puzzles') {
+        prompt = `Analyse ce puzzle (Sudoku, jeu, etc.). Donne le prochain coup ou la solution.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Solution Puzzle", "content": "### Analyse... ### Solution..."}`;
     }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -167,33 +168,65 @@ async function callGroq(apiKey, base64Image) {
 }
 
 function displayResults(data) {
+    console.log("Données reçues de l'IA:", data); // Debug
+    
     resultsArea.style.display = 'block';
     cuisineResults.style.display = 'none';
     budgetResults.style.display = 'none';
+    const genericArea = document.getElementById('generic-results');
+    genericArea.style.display = 'none';
 
     if (currentMode === 'cuisine') {
         cuisineResults.style.display = 'block';
-        document.getElementById('found-ingredients').textContent = "Ingrédients détectés : " + data.ingredients.join(', ');
+        document.getElementById('found-ingredients').textContent = "Ingrédients : " + (data.ingredients ? data.ingredients.join(', ') : "Non détectés");
         const list = document.getElementById('recipes-list');
         list.innerHTML = "";
-        data.recipes.forEach(r => {
-            const card = document.createElement('div');
-            card.className = 'recipe-card';
-            card.innerHTML = `<h3>${r.title}</h3><p style="font-size: 0.9rem; margin-top: 5px;">${r.steps}</p>`;
-            list.appendChild(card);
-        });
-    } else {
+        if (data.recipes) {
+            data.recipes.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.innerHTML = `<h3>${r.title || "Recette"}</h3><p>${r.steps || ""}</p>`;
+                list.appendChild(card);
+            });
+        }
+    } else if (currentMode === 'budget') {
         budgetResults.style.display = 'block';
-        document.getElementById('merchant-name').textContent = data.merchant;
-        document.getElementById('total-price').textContent = data.total + data.currency;
-        document.getElementById('ticket-date').textContent = "Date : " + data.date;
+        document.getElementById('merchant-name').textContent = data.merchant || "Marchand inconnu";
+        document.getElementById('total-price').textContent = (data.total || "0") + (data.currency || "€");
+        document.getElementById('ticket-date').textContent = data.date || "Date inconnue";
         const list = document.getElementById('items-list');
         list.innerHTML = "";
-        data.items.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${item.name}</td><td style="text-align: right;">${item.price}${data.currency}</td>`;
-            list.appendChild(tr);
-        });
+        if (data.items) {
+            data.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${item.name || "Article"}</td><td style="text-align: right;">${item.price || ""}${data.currency || ""}</td>`;
+                list.appendChild(tr);
+            });
+        }
+    } else {
+        genericArea.style.display = 'block';
+        // Fallback si les clés sont légèrement différentes
+        const title = data.title || data.nom || data.sujet || "Analyse terminée";
+        let content = data.content || data.description || data.guide || data.instructions || data;
+        
+        // Fonction récursive pour transformer n'importe quel objet en texte lisible
+        function formatRecursive(obj, level = 3) {
+            if (typeof obj !== 'object' || obj === null) return obj;
+            if (Array.isArray(obj)) return obj.map(item => formatRecursive(item, level)).join('\n');
+            
+            return Object.entries(obj).map(([key, value]) => {
+                const header = "#".repeat(level) + " " + key;
+                const body = typeof value === 'object' ? formatRecursive(value, level + 1) : value;
+                return `${header}\n${body}`;
+            }).join('\n\n');
+        }
+
+        const formattedContent = formatRecursive(content)
+            .replace(/\n/g, '<br>')
+            .replace(/###+ (.*)/g, '<h3>$1</h3>'); // Transforme les niveaux de # en titres
+            
+        document.getElementById('generic-title').textContent = title;
+        document.getElementById('generic-content').innerHTML = formattedContent;
     }
     
     resultsArea.scrollIntoView({ behavior: 'smooth' });

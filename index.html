@@ -15,14 +15,34 @@
         <p>Simplifiez votre quotidien par l'image</p>
     </header>
 
-    <div class="mode-selector">
+    <div class="mode-grid">
         <button class="mode-btn active" data-mode="cuisine">
             <i data-lucide="utensils"></i>
-            Cuisine
+            <span>Cuisine</span>
         </button>
         <button class="mode-btn" data-mode="budget">
             <i data-lucide="wallet"></i>
-            Budget
+            <span>Budget</span>
+        </button>
+        <button class="mode-btn" data-mode="minecraft">
+            <i data-lucide="pickaxe"></i>
+            <span>Minecraft</span>
+        </button>
+        <button class="mode-btn" data-mode="etudes">
+            <i data-lucide="graduation-cap"></i>
+            <span>Études</span>
+        </button>
+        <button class="mode-btn" data-mode="dev">
+            <i data-lucide="code-2"></i>
+            <span>Dev</span>
+        </button>
+        <button class="mode-btn" data-mode="style">
+            <i data-lucide="shirt"></i>
+            <span>Style</span>
+        </button>
+        <button class="mode-btn" data-mode="puzzles">
+            <i data-lucide="puzzle"></i>
+            <span>Puzzles</span>
         </button>
     </div>
 
@@ -66,6 +86,13 @@
                     </thead>
                     <tbody id="items-list"></tbody>
                 </table>
+            </div>
+
+            <div id="generic-results" style="display: none;">
+                <div class="result-header">
+                    <h2 id="generic-title">Résultat</h2>
+                </div>
+                <div id="generic-content" class="markdown-content"></div>
             </div>
         </section>
     </main>
