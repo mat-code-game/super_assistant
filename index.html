@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Assistant IA</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Super Assistant IA</h1>
+        <p>Simplifiez votre quotidien par l'image</p>
+    </header>
+
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="cuisine">
+            <i data-lucide="utensils"></i>
+            Cuisine
+        </button>
+        <button class="mode-btn" data-mode="budget">
+            <i data-lucide="wallet"></i>
+            Budget
+        </button>
+    </div>
+
+    <main class="main-card">
+        <label for="image-input" class="upload-zone" id="drop-zone">
+            <i data-lucide="camera" style="width: 48px; height: 48px; color: #ddd; margin-bottom: 10px;"></i>
+            <p>Prenez une photo ou uploadez un fichier</p>
+            <input type="file" id="image-input" accept="image/*" capture="environment" hidden>
+            <img id="preview" alt="Aperçu">
+        </label>
+
+        <button class="btn-action" id="analyze-btn" disabled>
+            <span id="btn-text">Analyser</span>
+        </button>
+
+        <!-- Zone de résultats dynamiques -->
+        <section id="results">
+            <div id="cuisine-results" style="display: none;">
+                <div class="result-header">
+                    <h2>🥘 Suggestions de Recettes</h2>
+                    <p id="found-ingredients" style="font-size: 0.9rem; margin-top: 5px;"></p>
+                </div>
+                <div id="recipes-list"></div>
+            </div>
+
+            <div id="budget-results" style="display: none;">
+                <div class="result-header">
+                    <h2>🧾 Analyse du Ticket</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                        <span id="merchant-name" style="font-weight: 800; font-size: 1.2rem;">Commerce</span>
+                        <span id="total-price" class="total-badge">0.00€</span>
+                    </div>
+                    <p id="ticket-date" style="font-size: 0.8rem; opacity: 0.6; margin-top: 5px;"></p>
+                </div>
+                <table class="budget-table">
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th style="text-align: right;">Prix</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-list"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Settings Trigger -->
+    <div class="settings-trigger" id="open-settings">
+        <i data-lucide="settings"></i>
+    </div>
+
+    <!-- Modal API Key -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <h2>Configuration Groq</h2>
+            <p style="font-size: 0.8rem; opacity: 0.7;">Utilisez la même clé que pour l'analyseur de plantes.</p>
+            <input type="password" id="api-key-input" placeholder="gsk_...">
+            <button class="btn-action" id="save-key" style="background: var(--accent);">Enregistrer</button>
+            <button class="btn-action" id="close-modal" style="background: #eee; color: #333; margin-top: 10px;">Annuler</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
