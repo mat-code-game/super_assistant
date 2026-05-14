@@ -56,20 +56,52 @@ modeBtns.forEach(btn => {
 });
 
 // Image handling
-imageInput.addEventListener('change', (e) => {
+imageInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            selectedImageBase64 = event.target.result;
+        setLoading(true, "Traitement...");
+        try {
+            selectedImageBase64 = await compressImage(file);
             preview.src = selectedImageBase64;
             preview.style.display = 'block';
             dropZone.classList.add('has-image');
             analyzeBtn.disabled = false;
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            alert("Erreur d'image");
+        } finally {
+            setLoading(false);
+        }
     }
 });
+
+function compressImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const MAX = 1000;
+                if (width > height && width > MAX) {
+                    height *= MAX / width;
+                    width = MAX;
+                } else if (height > MAX) {
+                    width *= MAX / height;
+                    height = MAX;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
 
 // Analyze
 analyzeBtn.addEventListener('click', async () => {
@@ -103,10 +135,10 @@ saveKeyBtn.addEventListener('click', () => {
 
 // --- Functions ---
 
-function setLoading(isLoading) {
+function setLoading(isLoading, text = "Analyse...") {
     analyzeBtn.disabled = isLoading;
     document.getElementById('btn-text').innerHTML = isLoading ? 
-        `<span class="spinner"></span> Analyse...` : "Analyser";
+        `<span class="spinner"></span> ${text}` : "Analyser";
 }
 
 async function callGroq(apiKey, base64Image) {
