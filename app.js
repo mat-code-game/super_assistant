@@ -4,7 +4,8 @@ const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // --- Elements ---
 const modeBtns = document.querySelectorAll('.mode-btn');
-const imageInput = document.getElementById('image-input');
+const cameraInput = document.getElementById('camera-input');
+const galleryInput = document.getElementById('gallery-input');
 const preview = document.getElementById('preview');
 const analyzeBtn = document.getElementById('analyze-btn');
 const resultsArea = document.getElementById('results');
@@ -55,8 +56,8 @@ modeBtns.forEach(btn => {
     });
 });
 
-// Image handling
-imageInput.addEventListener('change', async (e) => {
+// Logic
+const handleImage = async (e) => {
     const file = e.target.files[0];
     if (file) {
         setLoading(true, "Traitement...");
@@ -72,7 +73,10 @@ imageInput.addEventListener('change', async (e) => {
             setLoading(false);
         }
     }
-});
+};
+
+cameraInput.addEventListener('change', handleImage);
+galleryInput.addEventListener('change', handleImage);
 
 function compressImage(file) {
     return new Promise((resolve) => {
@@ -200,6 +204,38 @@ async function callGroq(apiKey, base64Image) {
         prompt = `Analyse cet objet ou ce lieu. Invente une mini-histoire fantastique courte dont cet élément est le héros.
         Réponds UNIQUEMENT au format JSON :
         {"title": "Histoire Instantanée", "content": "### L'histoire..."}`;
+    } else if (currentMode === 'jdr') {
+        prompt = `Analyse cette figurine ou ce personnage. Crée une fiche de personnage RPG : Nom, PV, Force, Magie et une capacité.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Fiche JDR", "content": "### Statistiques... ### Histoire..."}`;
+    } else if (currentMode === 'nutrition') {
+        prompt = `Analyse ce plat ou cet aliment. Donne les bienfaits nutritionnels et une astuce santé.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Coach Nutrition", "content": "### Bienfaits... ### Astuce..."}`;
+    } else if (currentMode === 'quiz') {
+        prompt = `Analyse ce document ou ce texte. Génère un quiz de 5 questions pour tester la compréhension.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Quiz Rapide", "content": "### Questions..."}`;
+    } else if (currentMode === 'notes') {
+        prompt = `Analyse cette liste écrite à la main. Transcris-la proprement sous forme de liste à puces.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Liste Digitalisée", "content": "### Tâches... "}`;
+    } else if (currentMode === 'tri') {
+        prompt = `Analyse cet objet ou emballage. Dis dans quelle poubelle (Jaune, Vert, Gris, Déchetterie) il doit aller.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Guide de Tri", "content": "### Poubelle... ### Pourquoi..."}`;
+    } else if (currentMode === 'taches') {
+        prompt = `Analyse cette tache sur un tissu. Identifie-la et donne une astuce pour l'enlever.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Expert Anti-Taches", "content": "### Tache... ### Solution..."}`;
+    } else if (currentMode === 'sante') {
+        prompt = `Analyse cette boîte de médicament. Résume son usage et donne les précautions majeures. Ajoute 'Demandez à un médecin'.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Mémo Santé", "content": "### Usage... ### Précautions..."}`;
+    } else if (currentMode === 'energie') {
+        prompt = `Analyse cette pièce ou appareil. Donne un conseil concret pour économiser de l'énergie ici.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Éco-Conseil", "content": "### Astuce..."}`;
     }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {

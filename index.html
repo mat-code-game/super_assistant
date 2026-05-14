@@ -60,15 +60,56 @@
             <i data-lucide="book-open"></i>
             <span>Histoires</span>
         </button>
+        <button class="mode-btn" data-mode="jdr">
+            <i data-lucide="swords"></i>
+            <span>JDR</span>
+        </button>
+        <button class="mode-btn" data-mode="nutrition">
+            <i data-lucide="apple"></i>
+            <span>Nutrition</span>
+        </button>
+        <button class="mode-btn" data-mode="quiz">
+            <i data-lucide="help-circle"></i>
+            <span>Quiz</span>
+        </button>
+        <button class="mode-btn" data-mode="notes">
+            <i data-lucide="sticky-note"></i>
+            <span>Notes</span>
+        </button>
+        <button class="mode-btn" data-mode="tri">
+            <i data-lucide="recycle"></i>
+            <span>Tri</span>
+        </button>
+        <button class="mode-btn" data-mode="taches">
+            <i data-lucide="droplet"></i>
+            <span>Taches</span>
+        </button>
+        <button class="mode-btn" data-mode="sante">
+            <i data-lucide="pill"></i>
+            <span>Santé</span>
+        </button>
+        <button class="mode-btn" data-mode="energie">
+            <i data-lucide="zap"></i>
+            <span>Énergie</span>
+        </button>
     </div>
 
     <main class="main-card">
-        <label for="image-input" class="upload-zone" id="drop-zone">
-            <i data-lucide="camera" style="width: 48px; height: 48px; color: #ddd; margin-bottom: 10px;"></i>
-            <p>Prenez une photo ou uploadez un fichier</p>
-            <input type="file" id="image-input" accept="image/*" capture="environment" hidden>
+        <div class="upload-zone" id="drop-zone">
+            <div class="upload-options" id="upload-options">
+                <label for="camera-input" class="opt-btn">
+                    <i data-lucide="camera"></i>
+                    <span>Photo</span>
+                </label>
+                <label for="gallery-input" class="opt-btn">
+                    <i data-lucide="image"></i>
+                    <span>Galerie</span>
+                </label>
+            </div>
+            <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+            <input type="file" id="gallery-input" accept="image/*" hidden>
             <img id="preview" alt="Aperçu">
-        </label>
+        </div>
 
         <button class="btn-action" id="analyze-btn" disabled>
             <span id="btn-text">Analyser</span>
