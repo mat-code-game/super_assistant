@@ -184,6 +184,22 @@ async function callGroq(apiKey, base64Image) {
         prompt = `Analyse ce puzzle (Sudoku, jeu, etc.). Donne le prochain coup ou la solution.
         Réponds UNIQUEMENT au format JSON :
         {"title": "Solution Puzzle", "content": "### Analyse... ### Solution..."}`;
+    } else if (currentMode === 'humeur') {
+        prompt = `Analyse cette photo de visage. Détermine l'humeur dominante (joyeux, triste, neutre, etc.). Suggère un genre musical et un conseil positif.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Analyse Humeur", "content": "### Humeur détectée... ### Conseil..."}`;
+    } else if (currentMode === 'art') {
+        prompt = `Analyse ce dessin ou cette œuvre. Décris le style et le sujet de façon poétique. Donne 3 conseils pour l'améliorer.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Analyse Artistique", "content": "### Style... ### Conseils..."}`;
+    } else if (currentMode === 'insectes') {
+        prompt = `Analyse cette photo d'insecte. Identifie-le. Précise s'il est inoffensif ou utile. Donne une anecdote intéressante.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Expert Insectes", "content": "### Espèce... ### Utilité... ### Anecdote..."}`;
+    } else if (currentMode === 'histoires') {
+        prompt = `Analyse cet objet ou ce lieu. Invente une mini-histoire fantastique courte dont cet élément est le héros.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Histoire Instantanée", "content": "### L'histoire..."}`;
     }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {

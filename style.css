@@ -82,6 +82,10 @@ header p {
 .mode-btn.active[data-mode="dev"] { background: #2c3e50; color: white; }
 .mode-btn.active[data-mode="style"] { background: #d35400; color: white; }
 .mode-btn.active[data-mode="puzzles"] { background: #c0392b; color: white; }
+.mode-btn.active[data-mode="humeur"] { background: #fdcb6e; color: #333; }
+.mode-btn.active[data-mode="art"] { background: #6c5ce7; color: white; }
+.mode-btn.active[data-mode="insectes"] { background: #55efc4; color: #333; }
+.mode-btn.active[data-mode="histoires"] { background: #fab1a0; color: #333; }
 
 /* Container */
 .main-card {
