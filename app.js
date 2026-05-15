@@ -2,6 +2,11 @@
 const STORAGE_KEY = 'groq_api_key';
 const MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
+// Supabase Config
+const SUPABASE_URL = "https://hedimvodzdzwnluekmtd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlZGltdm9kemR6d25sdWVrbXRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NjM3NTMsImV4cCI6MjA4NjMzOTc1M30.OJe37omxb53GnD0uohQ6tfxZPM48daH_sO1YR4SPHCw";
+const supabaseClient = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 // --- Elements ---
 const modeBtns = document.querySelectorAll('.mode-btn');
 const cameraInput = document.getElementById('camera-input');
@@ -26,7 +31,20 @@ const saveKeyBtn = document.getElementById('save-key');
 let currentMode = 'auto';
 let selectedImageBase64 = null;
 let sessionApiKey = null;
+let currentPseudo = localStorage.getItem('user_pseudo') || null;
+let lastRawResponse = null;
 const HISTORY_KEY = 'assistant_history';
+
+// --- Auth Utils ---
+async function hashPassword(password, pseudo) {
+    if (!password) return "";
+    const p = pseudo || "";
+    const salt = "pingpong_smash_secure_v1_"; // Même sel que pingpong pour compatibilité
+    const msgUint8 = new TextEncoder().encode(password + salt + p.toLowerCase());
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 // --- Storage Helpers ---
 function getApiKey() {
@@ -42,6 +60,7 @@ function setApiKey(key) {
 window.onload = () => {
     const savedKey = getApiKey();
     if (savedKey) apiKeyInput.value = savedKey;
+    initAuth();
     renderHistory();
     loadChatHistory();
     loadCustomBackground();
@@ -192,18 +211,164 @@ analyzeBtn.addEventListener('click', async () => {
 
 // Settings Logic
 openSettings.addEventListener('click', () => settingsModal.style.display = 'flex');
-closeSettings.addEventListener('click', () => settingsModal.style.display = 'none');
-document.getElementById('close-modal-x').addEventListener('click', () => settingsModal.style.display = 'none');
+
+// Fonction pour fermer la modale
+const closeModal = () => settingsModal.style.display = 'none';
+
+if (closeSettings) closeSettings.addEventListener('click', closeModal);
+const bottomCloseBtn = document.getElementById('close-modal');
+if (bottomCloseBtn) bottomCloseBtn.addEventListener('click', closeModal);
+
 document.getElementById('close-results').addEventListener('click', () => resultsArea.style.display = 'none');
+
 
 saveKeyBtn.addEventListener('click', () => {
     setApiKey(apiKeyInput.value.trim());
     settingsModal.style.display = 'none';
 });
 
-document.getElementById('change-img-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    galleryInput.click();
+// --- Auth Logic ---
+function initAuth() {
+    if (currentPseudo) {
+        updateAuthUI(true, currentPseudo);
+    }
+}
+
+async function handleLogin() {
+    const pseudo = document.getElementById('pseudo-input').value.trim();
+    const password = document.getElementById('password-input').value.trim();
+    const errorEl = document.getElementById('auth-error');
+    const loginBtn = document.getElementById('login-btn');
+
+    if (!pseudo || !password) {
+        errorEl.textContent = "Pseudo et mot de passe requis";
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    errorEl.style.display = 'none';
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Vérification...";
+
+    try {
+        const hash = await hashPassword(password, pseudo);
+        
+        // 1. Chercher le profil existant
+        let { data: profile, error } = await supabaseClient
+            .from('profils_arcade')
+            .select('*')
+            .eq('pseudo', pseudo)
+            .maybeSingle();
+
+        if (profile) {
+            // Vérifier le mot de passe
+            if (profile.password_hash === hash) {
+                loginSuccess(pseudo, profile.avatar_url);
+            } else {
+                throw new Error("Mot de passe incorrect");
+            }
+        } else {
+            // Créer un nouveau compte
+            const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${pseudo}`;
+            const { error: insError } = await supabaseClient
+                .from('profils_arcade')
+                .insert([{ pseudo, password_hash: hash, avatar_url: avatarUrl }]);
+            
+            if (insError) throw insError;
+            loginSuccess(pseudo, avatarUrl);
+        }
+    } catch (e) {
+        errorEl.textContent = e.message;
+        errorEl.style.display = 'block';
+    } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Se connecter / S'inscrire";
+    }
+}
+
+function loginSuccess(pseudo, avatar) {
+    currentPseudo = pseudo;
+    localStorage.setItem('user_pseudo', pseudo);
+    if (avatar) localStorage.setItem('user_avatar', avatar);
+    updateAuthUI(true, pseudo, avatar);
+    renderHistory(); // Recharger l'historique du nouvel utilisateur
+}
+
+function handleLogout() {
+    currentPseudo = null;
+    localStorage.removeItem('user_pseudo');
+    localStorage.removeItem('user_avatar');
+    updateAuthUI(false);
+    renderHistory();
+}
+
+function updateAuthUI(isLoggedIn, pseudo = "", avatar = "") {
+    const loginView = document.getElementById('login-view');
+    const loggedView = document.getElementById('logged-view');
+    const userBadge = document.getElementById('user-badge');
+    const userName = document.getElementById('user-name');
+    const userAvatar = document.getElementById('user-avatar');
+    const loggedPseudo = document.getElementById('logged-pseudo');
+    
+    // Nettoyage des badges précédents
+    const existingBadge = document.getElementById('god-badge');
+    if (existingBadge) existingBadge.remove();
+
+    if (isLoggedIn) {
+        loginView.style.display = 'none';
+        loggedView.style.display = 'block';
+        userBadge.style.display = 'flex';
+        userName.textContent = pseudo;
+        loggedPseudo.textContent = pseudo;
+
+        // Activation du GOD MODE pour "portable"
+        if (pseudo.toLowerCase() === 'portable') {
+            const badge = document.createElement('span');
+            badge.id = 'god-badge';
+            badge.textContent = '🤖 GOD MODE';
+            badge.style.cssText = 'color: #f59e0b; font-size: 0.65rem; font-weight: 800; margin-left: 5px;';
+            userBadge.appendChild(badge);
+            
+            // Ajouter le bouton voir le code secret dans la vue connectée
+            if (!document.getElementById('view-secret-btn')) {
+                const secretBtn = document.createElement('button');
+                secretBtn.id = 'view-secret-btn';
+                secretBtn.className = 'btn-secondary';
+                secretBtn.style.marginTop = '10px';
+                secretBtn.innerHTML = '<i data-lucide="key"></i> Voir le code secret';
+                loggedView.insertBefore(secretBtn, document.getElementById('logout-btn'));
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                
+                secretBtn.onclick = () => alert("🤫 Ton code secret est : tetris");
+            }
+        }
+        const savedAvatar = avatar || localStorage.getItem('user_avatar');
+        if (savedAvatar) userAvatar.src = savedAvatar;
+    } else {
+        loginView.style.display = 'block';
+        loggedView.style.display = 'none';
+        userBadge.style.display = 'none';
+    }
+}
+
+document.getElementById('login-btn').addEventListener('click', handleLogin);
+document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+// Toggle visibilité mot de passe
+document.getElementById('toggle-password').addEventListener('click', () => {
+    const passInput = document.getElementById('password-input');
+    const toggleBtn = document.getElementById('toggle-password');
+    // Lucide remplace le <i> par un <svg>, on cherche donc l'un ou l'autre
+    const icon = toggleBtn.querySelector('i, svg');
+    
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        if (icon) icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+        passInput.type = 'password';
+        if (icon) icon.setAttribute('data-lucide', 'eye');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 });
 
 // --- Theme Logic ---
@@ -415,6 +580,12 @@ async function callGroq(apiKey, base64Image) {
 
 function displayResults(data, skipSave = false) {
     console.log("Données reçues de l'IA:", data); // Debug
+    lastRawResponse = data;
+    const rawCode = document.getElementById('raw-code');
+    if (rawCode) rawCode.textContent = JSON.stringify(data, null, 2);
+    
+    // Masquer la vue code au début d'un nouveau résultat
+    document.getElementById('code-display').style.display = 'none';
     
     resultsArea.style.display = 'block';
     cuisineResults.style.display = 'none';
@@ -517,17 +688,28 @@ async function saveToHistory(mode, data, fullImage) {
     const title = data.title || (data.merchant ? "Ticket: " + data.merchant : null) || (data.ingredients ? "Cuisine: " + data.ingredients[0] : "Analyse");
     
     const entry = {
-        id: Date.now(),
         date: new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
         mode: mode,
         title: title,
         data: data,
-        image: thumbnail
+        image: thumbnail,
+        user_pseudo: currentPseudo // Lier au pseudo si connecté
     };
 
+    // Sauvegarde Locale (Fallback)
     history.unshift(entry);
-    history = history.slice(0, 10); // Garder 10
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+
+    // Sauvegarde Supabase
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from('assistant_history').insert([entry]);
+            console.log("Sauvegarde Supabase réussie");
+        } catch (e) {
+            console.error("Erreur Supabase:", e);
+        }
+    }
+    
     renderHistory();
 }
 
@@ -546,9 +728,40 @@ function createThumbnail(base64, size) {
     });
 }
 
-function renderHistory() {
+async function renderHistory() {
     const list = document.getElementById('history-list');
-    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    let history = [];
+
+    // Priorité Supabase
+    if (supabaseClient) {
+        try {
+            let query = supabaseClient
+                .from('assistant_history')
+                .select('*');
+            
+            // Filtrer par utilisateur si connecté, sinon public ou vide
+            if (currentPseudo) {
+                query = query.eq('user_pseudo', currentPseudo);
+            } else {
+                query = query.is('user_pseudo', null);
+            }
+
+            const { data, error } = await query
+                .order('created_at', { ascending: false })
+                .limit(10);
+            
+            if (!error && data) {
+                history = data;
+            }
+        } catch (e) {
+            console.warn("Impossible de charger Supabase, repli sur local.");
+        }
+    }
+
+    // Fallback Local si Supabase vide ou échoue
+    if (history.length === 0) {
+        history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    }
     
     if (history.length === 0) {
         list.innerHTML = "<p style='opacity:0.5; text-align:center;'>Aucun historique</p>";
@@ -556,32 +769,28 @@ function renderHistory() {
     }
 
     list.innerHTML = history.map(item => `
-        <div class="history-item" onclick="loadHistoryItem(${item.id})">
+        <div class="history-item" onclick="loadHistoryItemOnline('${item.id || ""}', ${JSON.stringify(item.data).replace(/"/g, '&quot;')}, '${item.image}', '${item.mode}')">
             <img src="${item.image}" class="history-img">
             <div class="history-info">
                 <span class="history-title">${item.title}</span>
-                <span class="history-date">${item.date}</span>
+                <span class="history-date">${item.date || new Date(item.created_at).toLocaleString()}</span>
             </div>
             <span class="history-badge">${item.mode}</span>
         </div>
     `).join('');
 }
 
-window.loadHistoryItem = (id) => {
-    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    const item = history.find(h => h.id === id);
-    if (item) {
-        currentMode = item.mode;
-        // Mettre à jour l'UI des boutons
-        modeBtns.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.mode === currentMode);
-        });
-        displayResults(item.data, true); // true = skipSave
-        preview.src = item.image;
-        preview.style.display = 'block';
-        dropZone.classList.add('has-image');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+// Nouvelle fonction pour charger un item (gestion ID ou objet direct)
+window.loadHistoryItemOnline = (id, data, image, mode) => {
+    currentMode = mode;
+    modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === currentMode));
+    
+    displayResults(data, true); // true = skipSave
+    preview.src = image;
+    preview.style.display = 'block';
+    dropZone.classList.add('has-image');
+    if (mainCard) mainCard.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 document.getElementById('show-history').addEventListener('click', () => {

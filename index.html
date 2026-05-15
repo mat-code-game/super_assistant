@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -287,6 +288,13 @@
                     <button id="send-chat"><i data-lucide="send"></i></button>
                 </div>
             </div>
+
+            <!-- Actions sur le résultat -->
+            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; padding: 0 5px;">
+                <button id="share-result" class="btn-secondary" style="flex: 1; min-width: 140px;">
+                    <i data-lucide="share-2"></i> Partager
+                </button>
+            </div>
         </section>
 
         <button class="btn-secondary" id="show-history">
@@ -307,32 +315,62 @@
         <i data-lucide="settings"></i>
     </div>
 
-    <!-- Modal API Key -->
     <div class="modal" id="settings-modal">
         <div class="modal-content" style="position: relative;">
-            <div class="close-btn" id="close-modal-x" style="top: 15px; right: 15px;">
-                <i data-lucide="x"></i>
+            <div class="modal-header">
+                <h2>Configuration</h2>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="user-badge" class="user-badge" style="display: none;">
+                        <img id="user-avatar" src="" alt="Avatar">
+                        <span id="user-name">Joueur</span>
+                    </div>
+                    <div class="close-btn" id="close-modal-x" style="position: static;">
+                        <i data-lucide="x"></i>
+                    </div>
+                </div>
             </div>
-            <h2>Configuration Groq</h2>
-            <input type="password" id="api-key-input" placeholder="gsk_...">
+
+            <div class="settings-section">
+                <h3>🔑 Mon Compte</h3>
+                <div id="login-view">
+                    <input type="text" id="pseudo-input" placeholder="Pseudo">
+                    <div style="position: relative; width: 100%;">
+                        <input type="password" id="password-input" placeholder="Mot de passe" style="padding-right: 45px;">
+                        <button id="toggle-password" class="btn-icon" style="position: absolute; right: 10px; top: 18px; background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <button class="btn-action" id="login-btn" style="background: var(--primary);">Se connecter / S'inscrire</button>
+                </div>
+                <div id="logged-view" style="display: none;">
+                    <p style="font-size: 0.9rem; margin-bottom: 10px;">Connecté en tant que <strong id="logged-pseudo"></strong></p>
+                    <button class="btn-secondary" id="logout-btn" style="margin: 0; color: #f43f5e;">Déconnexion</button>
+                </div>
+                <p id="auth-error" style="color: #f43f5e; font-size: 0.75rem; margin-top: 5px; display: none;"></p>
+            </div>
             
-            <div style="margin: 15px 0; text-align: left;">
-                <p style="font-size: 0.85rem; margin-bottom: 8px;">🌙 Mode</p>
-                <button id="theme-toggle" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0;">
-                    <i data-lucide="moon"></i> <span>Thème Sombre</span>
-                </button>
+            <div class="settings-section">
+                <h3>⚙️ Clé API Groq</h3>
+                <input type="password" id="api-key-input" placeholder="gsk_...">
+            </div>
+            
+            <div class="settings-section">
+                <h3>🌙 Thème & Fond</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button id="theme-toggle" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0;">
+                        <i data-lucide="moon"></i> <span>Thème</span>
+                    </button>
+                    <label class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin: 0;">
+                        <i data-lucide="image"></i> Fond
+                        <input type="file" id="bg-upload" accept="image/*" style="display: none;">
+                    </label>
+                </div>
             </div>
 
-            <div style="margin: 15px 0; text-align: left;">
-                <p style="font-size: 0.85rem; margin-bottom: 8px;">🎨 Personnalisation</p>
-                <label class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                    <i data-lucide="image"></i> Modifier le fond
-                    <input type="file" id="bg-upload" accept="image/*" style="display: none;">
-                </label>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button class="btn-action" id="save-key" style="background: var(--accent); flex: 1;">Enregistrer</button>
+                <button class="btn-action" id="close-modal" style="background: var(--glass); color: var(--text); flex: 1;">Fermer</button>
             </div>
-
-            <button class="btn-action" id="save-key" style="background: var(--accent);">Enregistrer</button>
-            <button class="btn-action" id="close-modal" style="background: #eee; color: #333; margin-top: 10px;">Annuler</button>
         </div>
     </div>
 

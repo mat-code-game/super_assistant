@@ -558,14 +558,50 @@ header p {
     z-index: 1000;
 }
 
-.modal-content {
-    background: var(--bg);
+/* --- Settings Modal Refinement --- */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 15px;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--glass);
+    padding: 5px 12px;
+    border-radius: 20px;
     border: 1px solid var(--glass-border);
-    border-radius: 32px;
-    padding: 30px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
+}
+
+.user-badge img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #333;
+}
+
+.user-badge span {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.settings-section {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.settings-section h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    color: var(--primary);
+    opacity: 0.8;
 }
 
 input[type="password"], input[type="text"], input[type="time"] {
@@ -575,7 +611,42 @@ input[type="password"], input[type="text"], input[type="time"] {
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     color: var(--text);
-    margin: 15px 0;
+    margin: 5px 0 10px 0;
+}
+
+/* --- Code View Styles --- */
+.code-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.code-header {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.code-header span {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary);
+}
+
+pre#raw-code::-webkit-scrollbar {
+    height: 6px;
+}
+
+pre#raw-code::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
 }
 
 /* --- Animations --- */
