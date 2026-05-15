@@ -6,7 +6,7 @@
     <title>Super Assistant IA</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -16,7 +16,15 @@
     </header>
 
     <div class="mode-grid">
-        <button class="mode-btn active" data-mode="cuisine">
+        <button class="mode-btn active" data-mode="auto">
+            <i data-lucide="sparkles"></i>
+            <span>Magique</span>
+        </button>
+        <button class="mode-btn" data-mode="musique">
+            <i data-lucide="music"></i>
+            <span>Musique</span>
+        </button>
+        <button class="mode-btn" data-mode="cuisine">
             <i data-lucide="utensils"></i>
             <span>Cuisine</span>
         </button>
@@ -55,6 +63,10 @@
         <button class="mode-btn" data-mode="insectes">
             <i data-lucide="bug"></i>
             <span>Insectes</span>
+        </button>
+        <button class="mode-btn" data-mode="jardinier">
+            <i data-lucide="leaf"></i>
+            <span>Jardinier</span>
         </button>
         <button class="mode-btn" data-mode="histoires">
             <i data-lucide="book-open"></i>
@@ -104,6 +116,14 @@
             <i data-lucide="message-circle"></i>
             <span>Ami IA</span>
         </button>
+        <button class="mode-btn" data-mode="traduction">
+            <i data-lucide="languages"></i>
+            <span>Traduc</span>
+        </button>
+        <button class="mode-btn" data-mode="qr">
+            <i data-lucide="qr-code"></i>
+            <span>QR</span>
+        </button>
     </div>
 
     <main class="main-card">
@@ -121,11 +141,20 @@
             <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
             <input type="file" id="gallery-input" accept="image/*" hidden>
             <img id="preview" alt="Aperçu">
+            <button class="change-img-btn" id="change-img-btn" type="button">
+                <i data-lucide="refresh-cw"></i> Changer d'image
+            </button>
         </div>
 
-        <button class="btn-action" id="analyze-btn" disabled>
-            <span id="btn-text">Analyser</span>
-        </button>
+        <div class="action-bar">
+            <button class="btn-action" id="analyze-btn" disabled>
+                <i data-lucide="search"></i>
+                <span id="btn-text">Analyser</span>
+            </button>
+            <button class="btn-mic" id="voice-btn" title="Parler à l'assistant">
+                <i data-lucide="mic"></i>
+            </button>
+        </div>
 
         <!-- Zone de résultats dynamiques -->
         <section id="results" style="position: relative;">
@@ -179,10 +208,23 @@
                 <div id="alarm-status" style="text-align: center; margin-top: 10px; font-weight: 600; color: var(--primary);"></div>
             </div>
 
-            <div id="chat-results" style="display: none;">
+            <div id="notes-results" style="display: none;">
                 <div class="result-header">
-                    <h2>💬 Votre Ami IA</h2>
-                    <p>Discutez de tout et de rien avec votre assistant.</p>
+                    <h2>📝 Liste Intelligente</h2>
+                    <p>Cochez les éléments au fur et à mesure.</p>
+                </div>
+                <div id="checklist-container" class="checklist-area"></div>
+            </div>
+
+            <div id="chat-results" style="display: none;">
+                <div class="result-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2>💬 Votre Ami IA</h2>
+                        <p>Discutez de tout et de rien avec votre assistant.</p>
+                    </div>
+                    <button id="download-chat" class="btn-mic" style="width: 40px; height: 40px; background: var(--glass);" title="Télécharger la discussion">
+                        <i data-lucide="download"></i>
+                    </button>
                 </div>
                 <div id="chat-messages" class="chat-container"></div>
                 <div class="chat-input-zone">
@@ -191,6 +233,18 @@
                 </div>
             </div>
         </section>
+
+        <button class="btn-secondary" id="show-history">
+            <i data-lucide="history"></i> Historique des analyses
+        </button>
+
+        <div id="history-panel" style="display: none; margin-top: 20px;">
+            <div class="result-header">
+                <h2>📜 Historique Recent</h2>
+                <p>Retrouvez vos 10 dernières analyses.</p>
+            </div>
+            <div id="history-list"></div>
+        </div>
     </main>
 
     <!-- Settings Trigger -->
@@ -205,17 +259,36 @@
                 <i data-lucide="x"></i>
             </div>
             <h2>Configuration Groq</h2>
-            <p style="font-size: 0.8rem; opacity: 0.7;">Utilisez la même clé que pour l'analyseur de plantes.</p>
             <input type="password" id="api-key-input" placeholder="gsk_...">
+            
+            <div style="margin: 15px 0; text-align: left;">
+                <p style="font-size: 0.85rem; margin-bottom: 8px;">🌙 Mode</p>
+                <button id="theme-toggle" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0;">
+                    <i data-lucide="moon"></i> <span>Thème Sombre</span>
+                </button>
+            </div>
+
+            <div style="margin: 15px 0; text-align: left;">
+                <p style="font-size: 0.85rem; margin-bottom: 8px;">🎨 Personnalisation</p>
+                <label class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                    <i data-lucide="image"></i> Modifier le fond
+                    <input type="file" id="bg-upload" accept="image/*" style="display: none;">
+                </label>
+            </div>
+
             <button class="btn-action" id="save-key" style="background: var(--accent);">Enregistrer</button>
-            <button class="btn-action" id="hide-console" style="background: #f39c12; margin-top: 10px;">Désactiver la console</button>
             <button class="btn-action" id="close-modal" style="background: #eee; color: #333; margin-top: 10px;">Annuler</button>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+
     <script src="app.js"></script>
-    <script>lucide.createIcons();</script>
+    <script>
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        } else {
+            console.error("Lucide n'a pas pu être chargé. Vérifiez votre connexion ou utilisez Live Server.");
+        }
+    </script>
 </body>
 </html>

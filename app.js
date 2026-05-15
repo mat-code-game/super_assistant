@@ -18,14 +18,15 @@ const budgetResults = document.getElementById('budget-results');
 // Modal Elements
 const settingsModal = document.getElementById('settings-modal');
 const openSettings = document.getElementById('open-settings');
-const closeSettings = document.getElementById('close-modal');
+const closeSettings = document.getElementById('close-modal-x');
 const apiKeyInput = document.getElementById('api-key-input');
 const saveKeyBtn = document.getElementById('save-key');
 
 // --- State ---
-let currentMode = 'cuisine';
+let currentMode = 'auto';
 let selectedImageBase64 = null;
 let sessionApiKey = null;
+const HISTORY_KEY = 'assistant_history';
 
 // --- Storage Helpers ---
 function getApiKey() {
@@ -41,6 +42,10 @@ function setApiKey(key) {
 window.onload = () => {
     const savedKey = getApiKey();
     if (savedKey) apiKeyInput.value = savedKey;
+    renderHistory();
+    loadChatHistory();
+    loadCustomBackground();
+    initTheme();
 };
 
 // --- Logic ---
@@ -125,8 +130,7 @@ function compressImage(file) {
 analyzeBtn.addEventListener('click', async () => {
     const apiKey = getApiKey();
     if (!apiKey) {
-        alert("Veuillez configurer votre clé API dans les paramètres.");
-        settingsModal.style.display = 'flex';
+        alert("Veuillez configurer votre clé API dans les paramètres (icône engrenage).");
         return;
     }
 
@@ -154,38 +158,107 @@ saveKeyBtn.addEventListener('click', () => {
     settingsModal.style.display = 'none';
 });
 
-document.getElementById('hide-console').addEventListener('click', () => {
-    if (typeof eruda !== 'undefined') {
-        eruda.destroy();
-        alert("Console désactivée. Rechargez la page pour la retrouver.");
-        settingsModal.style.display = 'none';
+document.getElementById('change-img-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    galleryInput.click();
+});
+
+// --- Theme Logic ---
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeUI(savedTheme);
+}
+
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    updateThemeUI(next);
+});
+
+function updateThemeUI(theme) {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    const span = btn.querySelector('span');
+    const icon = btn.querySelector('i, svg'); // Cherche l'icône ou le SVG généré par Lucide
+    
+    if (theme === 'light') {
+        if (span) span.textContent = "Thème Clair";
+        if (icon) icon.setAttribute('data-lucide', 'sun');
+    } else {
+        if (span) span.textContent = "Thème Sombre";
+        if (icon) icon.setAttribute('data-lucide', 'moon');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
+
+document.getElementById('bg-upload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const base64 = await compressImage(file);
+        localStorage.setItem('custom_bg', base64);
+        applyBackground(base64);
     }
 });
+
+function applyBackground(base64) {
+    document.body.style.backgroundImage = `linear-gradient(var(--bg-overlay), var(--bg-overlay)), url(${base64})`;
+}
+
+function loadCustomBackground() {
+    const savedBg = localStorage.getItem('custom_bg');
+    if (savedBg) applyBackground(savedBg);
+}
 
 // --- Functions ---
 
 function setLoading(isLoading, text = "Analyse...") {
     analyzeBtn.disabled = isLoading;
-    document.getElementById('btn-text').innerHTML = isLoading ? 
-        `<span class="spinner"></span> ${text}` : "Analyser";
+    const btnText = document.getElementById('btn-text');
+    if (btnText) {
+        btnText.innerHTML = isLoading ? `<span class="spinner"></span> ${text}` : "Analyser";
+    }
 }
 
 async function callGroq(apiKey, base64Image) {
     const base64Data = base64Image.split(',')[1];
     
     let prompt = "";
-    if (currentMode === 'cuisine') {
+    if (currentMode === 'auto') {
+        prompt = `Analyse cette image sans contexte préalable. 
+        1. Identifie ce que c'est de façon précise. 
+        2. Donne les informations les plus utiles selon l'objet (recette si nourriture, calcul si maths, conseils si objet, mode si vêtement, etc.).
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Analyse Magique", "content": "### Objet détecté : ... ### Détails..."}`;
+    } else if (currentMode === 'musique') {
+        prompt = `Analyse cette photo liée à la musique (partition, paroles, instrument). 
+        1. Si c'est une partition : explique la tonalité et les premières notes. 
+        2. Si c'est des paroles : traduis-les et explique le sens. 
+        3. Si c'est un instrument : donne 3 conseils pour débutant.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Assistant Musique", "content": "### Analyse... ### Conseils..."}`;
+    } else if (currentMode === 'cuisine') {
         prompt = `Analyse cette photo de nourriture. Liste les ingrédients principaux et propose 3 recettes simples (Titre + Étapes). 
         Réponds UNIQUEMENT au format JSON : 
         {"ingredients": ["..."], "recipes": [{"title": "...", "steps": "..."}]}`;
+    } else if (currentMode === 'jardinier') {
+        prompt = `Analyse cette plante. Identifie l'espèce, son état de santé et donne 3 conseils d'entretien (arrosage, lumière, rempotage).
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Expert Jardinage", "content": "### Plante : ... ### État : ... ### Conseils : ..."}`;
     } else if (currentMode === 'budget') {
         prompt = `Analyse ce ticket de caisse. Extrait le marchand, la date, le total et les articles.
         Réponds UNIQUEMENT au format JSON :
         {"merchant": "...", "date": "...", "total": "...", "currency": "€", "items": [{"name": "...", "price": "..."}]}`;
     } else if (currentMode === 'minecraft') {
-        prompt = `Analyse cette photo d'architecture. Donne des conseils pour la reproduire dans Minecraft (blocs, dimensions, étapes).
+        prompt = `Analyse cette photo. Donne les instructions pour la reproduire dans Minecraft : 
+        1. Liste des blocs nécessaires. 
+        2. Plan de construction étape par étape.
+        3. Astuces de décoration.
         Réponds UNIQUEMENT au format JSON :
-        {"title": "Guide Minecraft", "content": "### Blocs suggérés... ### Étapes..."}`;
+        {"title": "Projet Minecraft", "content": "### Matériaux... ### Étapes..."}`;
     } else if (currentMode === 'etudes') {
         prompt = `Analyse cet exercice. Explique la méthode de résolution sans donner la réponse finale.
         Réponds UNIQUEMENT au format JSON :
@@ -231,9 +304,9 @@ async function callGroq(apiKey, base64Image) {
         Réponds UNIQUEMENT au format JSON :
         {"title": "Quiz Rapide", "content": "### Questions..."}`;
     } else if (currentMode === 'notes') {
-        prompt = `Analyse cette liste écrite à la main. Transcris-la proprement sous forme de liste à puces.
+        prompt = `Analyse cette liste ou ces notes. Extrais les éléments sous forme de liste de tâches.
         Réponds UNIQUEMENT au format JSON :
-        {"title": "Liste Digitalisée", "content": "### Tâches... "}`;
+        {"title": "Ma Liste", "items": ["...", "..."]}`;
     } else if (currentMode === 'tri') {
         prompt = `Analyse cet objet ou emballage. Dis dans quelle poubelle (Jaune, Vert, Gris, Déchetterie) il doit aller.
         Réponds UNIQUEMENT au format JSON :
@@ -250,6 +323,20 @@ async function callGroq(apiKey, base64Image) {
         prompt = `Analyse cette pièce ou appareil. Donne un conseil concret pour économiser de l'énergie ici.
         Réponds UNIQUEMENT au format JSON :
         {"title": "Éco-Conseil", "content": "### Astuce..."}`;
+    } else if (currentMode === 'traduction') {
+        prompt = `Analyse le texte présent sur cette image. 
+        1. Transcris le texte original. 
+        2. Traduis-le en Français de façon naturelle. 
+        3. Explique brièvement le contexte ou des points culturels si nécessaire.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Traducteur Visuel", "content": "### Texte Original... ### Traduction... ### Notes..."}`;
+    } else if (currentMode === 'qr') {
+        prompt = `Analyse ce QR Code ou code-barres. 
+        1. Décode le contenu (URL, texte, etc.). 
+        2. Si c'est une URL, explique où elle mène. 
+        3. Donne un conseil de sécurité ou une description de ce que l'utilisateur va trouver.
+        Réponds UNIQUEMENT au format JSON :
+        {"title": "Lecteur Intelligent", "content": "### Contenu détecté... ### Analyse... ### Conseil..."}`;
     } else if (currentMode === 'monuments') {
         prompt = `Analyse cette photo de monument ou lieu historique. Identifie-le et raconte son histoire de façon intéressante.
         Réponds UNIQUEMENT au format JSON :
@@ -283,18 +370,29 @@ async function callGroq(apiKey, base64Image) {
     return JSON.parse(data.choices[0].message.content);
 }
 
-function displayResults(data) {
+function displayResults(data, skipSave = false) {
     console.log("Données reçues de l'IA:", data); // Debug
     
     resultsArea.style.display = 'block';
     cuisineResults.style.display = 'none';
     budgetResults.style.display = 'none';
+    document.getElementById('notes-results').style.display = 'none';
     document.getElementById('alarm-results').style.display = 'none';
     document.getElementById('chat-results').style.display = 'none';
     const genericArea = document.getElementById('generic-results');
     genericArea.style.display = 'none';
 
-    if (currentMode === 'cuisine') {
+    if (currentMode === 'notes' && data.items) {
+        const area = document.getElementById('notes-results');
+        area.style.display = 'block';
+        const container = document.getElementById('checklist-container');
+        container.innerHTML = data.items.map(item => `
+            <div class="check-item" onclick="this.classList.toggle('done'); this.querySelector('input').checked = !this.querySelector('input').checked;">
+                <input type="checkbox">
+                <span>${item}</span>
+            </div>
+        `).join('');
+    } else if (currentMode === 'cuisine') {
         cuisineResults.style.display = 'block';
         document.getElementById('found-ingredients').textContent = "Ingrédients : " + (data.ingredients ? data.ingredients.join(', ') : "Non détectés");
         const list = document.getElementById('recipes-list');
@@ -357,7 +455,157 @@ function displayResults(data) {
         document.getElementById('generic-content').innerHTML = formattedContent;
     }
     
+    
+    // Sauvegarder dans l'historique (sauf pour alarme, chat ou si on vient déjà de l'historique)
+    if (!skipSave && currentMode !== 'alarm' && currentMode !== 'chat') {
+        saveToHistory(currentMode, data, selectedImageBase64);
+    }
+
     resultsArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- Système d'Historique ---
+
+async function saveToHistory(mode, data, fullImage) {
+    // Créer une miniature pour économiser le localStorage (max 5MB total)
+    const thumbnail = await createThumbnail(fullImage, 100);
+    
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const title = data.title || (data.merchant ? "Ticket: " + data.merchant : null) || (data.ingredients ? "Cuisine: " + data.ingredients[0] : "Analyse");
+    
+    const entry = {
+        id: Date.now(),
+        date: new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        mode: mode,
+        title: title,
+        data: data,
+        image: thumbnail
+    };
+
+    history.unshift(entry);
+    history = history.slice(0, 10); // Garder 10
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory();
+}
+
+function createThumbnail(base64, size) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, size, size);
+            resolve(canvas.toDataURL('image/jpeg', 0.5));
+        };
+        img.src = base64;
+    });
+}
+
+function renderHistory() {
+    const list = document.getElementById('history-list');
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    
+    if (history.length === 0) {
+        list.innerHTML = "<p style='opacity:0.5; text-align:center;'>Aucun historique</p>";
+        return;
+    }
+
+    list.innerHTML = history.map(item => `
+        <div class="history-item" onclick="loadHistoryItem(${item.id})">
+            <img src="${item.image}" class="history-img">
+            <div class="history-info">
+                <span class="history-title">${item.title}</span>
+                <span class="history-date">${item.date}</span>
+            </div>
+            <span class="history-badge">${item.mode}</span>
+        </div>
+    `).join('');
+}
+
+window.loadHistoryItem = (id) => {
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    const item = history.find(h => h.id === id);
+    if (item) {
+        currentMode = item.mode;
+        // Mettre à jour l'UI des boutons
+        modeBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === currentMode);
+        });
+        displayResults(item.data, true); // true = skipSave
+        preview.src = item.image;
+        preview.style.display = 'block';
+        dropZone.classList.add('has-image');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+document.getElementById('show-history').addEventListener('click', () => {
+    const panel = document.getElementById('history-panel');
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) panel.scrollIntoView({ behavior: 'smooth' });
+});
+
+// --- Reconnaissance Vocale ---
+const voiceBtn = document.getElementById('voice-btn');
+const recognition = window.SpeechRecognition || window.webkitSpeechRecognition ? new (window.SpeechRecognition || window.webkitSpeechRecognition)() : null;
+
+if (recognition) {
+    recognition.lang = 'fr-FR';
+    recognition.continuous = false;
+
+    voiceBtn.addEventListener('click', () => {
+        if (voiceBtn.classList.contains('recording')) {
+            recognition.stop();
+        } else {
+            recognition.start();
+            voiceBtn.classList.add('recording');
+        }
+    });
+
+    recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        voiceBtn.classList.remove('recording');
+        
+        // On bascule automatiquement sur le chat
+        currentMode = 'chat';
+        modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'chat'));
+        document.getElementById('chat-results').style.display = 'block';
+        resultsArea.style.display = 'block';
+        
+        addChatMessage('user', transcript);
+        const reply = await getAiReply(transcript);
+        addChatMessage('ai', reply);
+        speak(reply);
+    };
+
+    recognition.onerror = () => voiceBtn.classList.remove('recording');
+    recognition.onend = () => voiceBtn.classList.remove('recording');
+} else {
+    voiceBtn.style.display = 'none';
+}
+
+async function getAiReply(text) {
+    const apiKey = getApiKey();
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    { role: "system", content: "Tu es un assistant vocal intelligent et chaleureux." },
+                    { role: "user", content: text }
+                ]
+            })
+        });
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (e) {
+        return "Désolé, je n'ai pas pu traiter ta demande.";
+    }
 }
 
 // --- Système de Réveil & Chat ---
@@ -399,22 +647,85 @@ async function triggerAlarm() {
     speak(msg);
 }
 
-function addChatMessage(role, text) {
+function addChatMessage(role, text, skipSave = false) {
     const container = document.getElementById('chat-messages');
+    if (!container) return;
+    
     const div = document.createElement('div');
     div.className = `message msg-${role}`;
     div.textContent = text;
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    
+    if (!skipSave) saveChatHistory(role, text);
+    
+    container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+    });
 }
 
-function speak(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
+function saveChatHistory(role, text) {
+    let chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    chatHistory.push({ role, text, date: new Date().toISOString() });
+    localStorage.setItem('chat_history', JSON.stringify(chatHistory.slice(-50)));
+}
+
+function loadChatHistory() {
+    let chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    chatHistory.forEach(msg => addChatMessage(msg.role, msg.text, true));
+}
+
+document.getElementById('download-chat')?.addEventListener('click', () => {
+    const chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    if (chatHistory.length === 0) return alert("Rien à télécharger !");
+
+    let text = "--- DISCUSSION AVEC SUPER ASSISTANT IA ---\n\n";
+    chatHistory.forEach(msg => {
+        const name = msg.role === 'user' ? "MOI" : "IA";
+        text += `[${new Date(msg.date).toLocaleString()}] ${name}: ${msg.text}\n\n`;
+    });
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `discussion_assistant_${new Date().toLocaleDateString()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+
+function speak(text, articulate = false) {
+    if (!text) return;
+    
+    // Nettoyage du texte pour la synthèse vocale (enlever les astérisques, les dièses, etc.)
+    let cleanText = text
+        .replace(/[*#_]/g, '') // Enlever *, #, _
+        .replace(/\[.*?\]/g, '') // Enlever les liens markdown [texte]
+        .replace(/\(.*?\)/g, '') // Enlever les parenthèses (souvent du markdown)
+        .replace(/:.*?:/g, '') // Enlever les emojis en format :emoji:
+        .trim();
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'fr-FR';
+    utterance.rate = articulate ? 0.9 : 1.0;
+    utterance.pitch = 1.1;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Google') || v.name.includes('Premium')));
+    if (femaleVoice) utterance.voice = femaleVoice;
+
     window.speechSynthesis.speak(utterance);
 }
 
-document.getElementById('send-chat').addEventListener('click', async () => {
+
+document.getElementById('send-chat').addEventListener('click', () => handleChatSend());
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleChatSend();
+});
+
+async function handleChatSend() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
@@ -430,7 +741,7 @@ document.getElementById('send-chat').addEventListener('click', async () => {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
-                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche." },
+                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche. Évite les formats markdown complexes (pas trop d'astérisques ou de listes), parle simplement comme si tu discutais à haute voix." },
                     { role: "user", content: text }
                 ]
             })
@@ -438,8 +749,8 @@ document.getElementById('send-chat').addEventListener('click', async () => {
         const data = await response.json();
         const reply = data.choices[0].message.content;
         addChatMessage('ai', reply);
-        speak(reply);
+        speak(reply, true);
     } catch (e) {
         addChatMessage('ai', "Désolé, j'ai un petit souci de connexion...");
     }
-});
+}
