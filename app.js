@@ -50,6 +50,41 @@ window.onload = () => {
 
 // --- Logic ---
 
+// --- Navigation Hub ---
+const hubView = document.getElementById('hub-view');
+const categoriesView = document.getElementById('categories-view');
+const backToHub = document.getElementById('back-to-hub');
+const hubCards = document.querySelectorAll('.hub-card');
+const categoryBlocks = document.querySelectorAll('.category-block');
+const mainCard = document.querySelector('.main-card');
+
+// Masquer le cadre d'analyse par défaut au chargement (puisqu'on commence sur le hub)
+if (mainCard) mainCard.style.display = 'none';
+
+hubCards.forEach(card => {
+    card.addEventListener('click', () => {
+        const cat = card.dataset.cat;
+        
+        // Cacher le hub, afficher la vue catégories et le cadre d'analyse
+        hubView.style.display = 'none';
+        categoriesView.style.display = 'flex';
+        if (mainCard) mainCard.style.display = 'block';
+        
+        // Cacher tous les blocs, afficher celui sélectionné
+        categoryBlocks.forEach(block => block.style.display = 'none');
+        document.getElementById(`cat-${cat}`).style.display = 'block';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});
+
+backToHub.addEventListener('click', () => {
+    hubView.style.display = 'grid';
+    categoriesView.style.display = 'none';
+    if (mainCard) mainCard.style.display = 'none';
+    resultsArea.style.display = 'none'; // Optionnel: cacher les résultats au retour
+});
+
 // Switch Mode
 modeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -57,6 +92,9 @@ modeBtns.forEach(btn => {
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
         
+        // S'assurer que le cadre est visible (utile si on change de mode)
+        if (mainCard) mainCard.style.display = 'block';
+
         // Cacher les résultats précédents
         resultsArea.style.display = 'none';
         
@@ -69,6 +107,11 @@ modeBtns.forEach(btn => {
         } else {
             dropZone.style.display = 'flex';
             analyzeBtn.style.display = 'block';
+        }
+
+        // Scroll vers la zone d'action (Main Card) pour faciliter l'usage sur mobile
+        if (mainCard) {
+            mainCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         console.log("Mode actuel:", currentMode);
