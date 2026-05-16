@@ -1054,7 +1054,14 @@ async function getAiReply(text) {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
-                    { role: "system", content: "Tu es un assistant vocal intelligent et chaleureux." },
+                    { 
+                        role: "system", 
+                        content: `Aujourd'hui, nous sommes le samedi 16 mai 2026. 
+                        Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                        Ton style : super amical, décontracté, tu tutoies systématiquement. 
+                        Quand on te demande des films ou infos 'récents', propose des choses de 2024, 2025 ou 2026. 
+                        Utilise parfois des abréviations (cc, cv, mrc, tk, slt, tb) et des emojis.` 
+                    },
                     { role: "user", content: text }
                 ]
             })
@@ -1062,9 +1069,10 @@ async function getAiReply(text) {
         const data = await response.json();
         return data.choices[0].message.content;
     } catch (e) {
-        return "Désolé, je n'ai pas pu traiter ta demande.";
+        return "Désolé mon pote, j'ai eu un petit bug de connexion... On réessaie ?";
     }
 }
+
 
 // --- Système de Réveil & Chat ---
 let alarmTime = null;
@@ -1083,13 +1091,21 @@ document.getElementById('set-alarm').addEventListener('click', async () => {
     document.getElementById('alarm-status').textContent = `🔔 Réveil actif pour ${alarmTime}`;
     document.getElementById('set-alarm').textContent = "Modifier l'heure";
     
-    // Demander le Wake Lock (empêche la mise en veille profonde)
+    // Demander le Wake Lock
     try {
         if ('wakeLock' in navigator) {
             wakeLock = await navigator.wakeLock.request('screen');
         }
     } catch (err) {
-        console.log("WakeLock non supporté ou refusé.");
+        console.log("WakeLock non supporté.");
+    }
+
+    // Lancer un son silencieux pour maintenir le processus en vie si l'écran est éteint
+    const sound = document.getElementById('alarm-sound');
+    if (sound) {
+        sound.volume = 0;
+        sound.play().catch(() => {});
+        // On remettra le son à 1.0 lors de la vraie alarme
     }
 
     if (alarmInterval) clearInterval(alarmInterval);
@@ -1126,6 +1142,7 @@ document.getElementById('stop-alarm').addEventListener('click', () => {
 async function triggerAlarm() {
     const sound = document.getElementById('alarm-sound');
     if (sound) {
+        sound.volume = 1.0;
         sound.play().catch(e => console.log("Erreur lecture audio:", e));
     }
 
@@ -1165,6 +1182,88 @@ function addChatMessage(role, text, skipSave = false) {
         behavior: 'smooth'
     });
 }
+
+// --- LOGIQUE D'APPEL VOCAL ---
+let recognition = null;
+let isCallMuted = false;
+
+function initSpeech() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = async (event) => {
+            const text = event.results[0][0].transcript;
+            console.log("Appel - entendu:", text);
+            document.getElementById('call-status').textContent = "L'Ami IA réfléchit...";
+            
+            const reply = await getAiReply(text);
+            speakResponse(reply);
+        };
+
+        recognition.onend = () => {
+            if (document.getElementById('call-overlay').style.display === 'flex' && !isCallMuted) {
+                recognition.start(); // Reprendre l'écoute
+            }
+        };
+    }
+}
+
+function speakResponse(text) {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR';
+    
+    // Animation de l'avatar quand l'IA parle
+    utterance.onstart = () => {
+        document.getElementById('call-avatar-anim').classList.add('speaking');
+        document.getElementById('call-status').textContent = "L'Ami IA parle...";
+    };
+    utterance.onend = () => {
+        document.getElementById('call-avatar-anim').classList.remove('speaking');
+        document.getElementById('call-status').textContent = "À vous, je vous écoute...";
+    };
+
+    synth.speak(utterance);
+}
+
+async function startCall() {
+    const overlay = document.getElementById('call-overlay');
+    overlay.style.display = 'flex';
+    document.getElementById('call-status').textContent = "Connexion...";
+    
+    if (!recognition) initSpeech();
+    
+    // Message de bienvenue
+    const welcome = `Salut ${currentPseudo || 'mon pote'} ! Content de t'avoir au téléphone, ça va ?`;
+    speakResponse(welcome);
+    
+    setTimeout(() => {
+        if (recognition && !isCallMuted) recognition.start();
+    }, 2000);
+}
+
+document.getElementById('call-ai')?.addEventListener('click', startCall);
+
+document.getElementById('end-call')?.addEventListener('click', () => {
+    document.getElementById('call-overlay').style.display = 'none';
+    window.speechSynthesis.cancel();
+    if (recognition) recognition.stop();
+});
+
+document.getElementById('mute-call')?.addEventListener('click', () => {
+    isCallMuted = !isCallMuted;
+    const btn = document.getElementById('mute-call');
+    btn.style.background = isCallMuted ? "#e94560" : "rgba(255,255,255,0.1)";
+    btn.innerHTML = isCallMuted ? '<i data-lucide="mic"></i>' : '<i data-lucide="mic-off"></i>';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    if (isCallMuted) recognition.stop();
+    else recognition.start();
+});
 
 function saveChatHistory(role, text) {
     let chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');

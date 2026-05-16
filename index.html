@@ -308,11 +308,16 @@
                 <div class="result-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h2>💬 Votre Ami IA</h2>
-                        <p>Discutez de tout et de rien avec votre assistant.</p>
+                        <p>Discutez avec votre pote.</p>
                     </div>
-                    <button id="download-chat" class="btn-mic" style="width: 40px; height: 40px; background: var(--glass);" title="Télécharger la discussion">
-                        <i data-lucide="download"></i>
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="call-ai" class="btn-mic" style="width: 40px; height: 40px; background: var(--secondary); color: white;" title="Appeler l'IA">
+                            <i data-lucide="phone"></i>
+                        </button>
+                        <button id="download-chat" class="btn-mic" style="width: 40px; height: 40px; background: var(--glass);" title="Télécharger la discussion">
+                            <i data-lucide="download"></i>
+                        </button>
+                    </div>
                 </div>
                 <div id="chat-messages" class="chat-container"></div>
                 <div class="chat-input-zone">
@@ -320,6 +325,27 @@
                     <button id="send-chat"><i data-lucide="send"></i></button>
                 </div>
             </div>
+
+            <!-- Interface d'Appel Vocal -->
+            <div id="call-overlay" class="modal" style="display: none; flex-direction: column; align-items: center; justify-content: space-around; background: linear-gradient(to bottom, #1a1a2e, #16213e);">
+                <div style="text-align: center; margin-top: 50px;">
+                    <div class="call-avatar" id="call-avatar-anim">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AmiIA" alt="IA Avatar" style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--secondary);">
+                    </div>
+                    <h2 style="color: white; margin-top: 20px;" id="call-status">Appel en cours...</h2>
+                    <p style="color: rgba(255,255,255,0.6);" id="call-timer">Ami IA</p>
+                </div>
+
+                <div class="call-actions" style="display: flex; gap: 30px; margin-bottom: 50px;">
+                    <button id="mute-call" class="btn-mic" style="width: 70px; height: 70px; background: rgba(255,255,255,0.1); color: white; border-radius: 50%;">
+                        <i data-lucide="mic-off"></i>
+                    </button>
+                    <button id="end-call" class="btn-mic" style="width: 70px; height: 70px; background: #e94560; color: white; border-radius: 50%;">
+                        <i data-lucide="phone-off"></i>
+                    </button>
+                </div>
+            </div>
+
 
         </section>
 
