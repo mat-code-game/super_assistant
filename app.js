@@ -571,8 +571,11 @@ function displayResults(data, skipSave = false) {
             case 'puzzles': renderGeneric(data, "🧩 Puzzle"); break;
             case 'monuments': renderGeneric(data, "🏛️ Monument"); break;
             case 'humeur': renderGeneric(data, "😊 Humeur"); break;
+            case 'chat': renderChat(); break;
+            case 'alarm': renderAlarm(); break;
             default: renderGeneric(data, data.title || "Analyse"); break;
         }
+
 
 
 
@@ -700,6 +703,24 @@ function renderGeneric(data, title) {
         genericContent.innerHTML = marked.parse(finalMarkdown);
     }
 }
+
+function renderChat() {
+    const chatRes = document.getElementById('chat-results');
+    if (chatRes) {
+        chatRes.style.display = 'block';
+        // Charger l'historique si le conteneur est vide
+        const container = document.getElementById('chat-messages');
+        if (container && container.children.length === 0) {
+            loadChatHistory();
+        }
+    }
+}
+
+function renderAlarm() {
+    const alarmRes = document.getElementById('alarm-results');
+    if (alarmRes) alarmRes.style.display = 'block';
+}
+
 
 
     
@@ -1048,12 +1069,29 @@ async function getAiReply(text) {
 // --- Système de Réveil & Chat ---
 let alarmTime = null;
 let alarmInterval = null;
+let wakeLock = null;
 
-document.getElementById('set-alarm').addEventListener('click', () => {
+// Demander la permission de notification au chargement si possible
+if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+}
+
+document.getElementById('set-alarm').addEventListener('click', async () => {
     alarmTime = document.getElementById('alarm-time').value;
-    if (!alarmTime) return alert("Choisis une heure !");
+    if (!alarmTime) return showToast("Choisis une heure !", "error");
     
-    document.getElementById('alarm-status').textContent = `Réveil réglé pour ${alarmTime}`;
+    document.getElementById('alarm-status').textContent = `🔔 Réveil actif pour ${alarmTime}`;
+    document.getElementById('set-alarm').textContent = "Modifier l'heure";
+    
+    // Demander le Wake Lock (empêche la mise en veille profonde)
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+        }
+    } catch (err) {
+        console.log("WakeLock non supporté ou refusé.");
+    }
+
     if (alarmInterval) clearInterval(alarmInterval);
     
     alarmInterval = setInterval(() => {
@@ -1064,22 +1102,49 @@ document.getElementById('set-alarm').addEventListener('click', () => {
             triggerAlarm();
         }
     }, 1000);
+
+    showToast("Réveil programmé !", "success");
+});
+
+document.getElementById('stop-alarm').addEventListener('click', () => {
+    const sound = document.getElementById('alarm-sound');
+    if (sound) {
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    document.getElementById('stop-alarm').style.display = 'none';
+    document.getElementById('set-alarm').style.display = 'block';
+    document.getElementById('alarm-status').textContent = "Réveil arrêté.";
+    
+    // Libérer le Wake Lock
+    if (wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+    }
 });
 
 async function triggerAlarm() {
-    // On bascule automatiquement sur le chat pour le réveil
+    const sound = document.getElementById('alarm-sound');
+    if (sound) {
+        sound.play().catch(e => console.log("Erreur lecture audio:", e));
+    }
+
+    document.getElementById('stop-alarm').style.display = 'block';
+    document.getElementById('set-alarm').style.display = 'none';
+
+    // Notification pour réveiller l'écran
+    if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("⏰ RÉVEIL !", {
+            body: "Il est l'heure ! Clique pour arrêter.",
+            icon: "favicon.ico"
+        });
+    }
+
+    // Basculer sur le chat pour l'interaction matinale
     currentMode = 'chat';
-    modeBtns.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.mode === 'chat') btn.classList.add('active');
-    });
+    renderChat();
     
-    // On affiche la zone de chat
-    document.getElementById('alarm-results').style.display = 'none';
-    document.getElementById('chat-results').style.display = 'block';
-    resultsArea.style.display = 'block';
-    
-    const msg = "Bonjour ! C'est l'heure de se réveiller ! Comment tu te sens ce matin ?";
+    const msg = "Bonjour ! C'est l'heure de se réveiller ! ☀️ Comment tu te sens ce matin ?";
     addChatMessage('ai', msg);
 }
 

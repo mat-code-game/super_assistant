@@ -291,6 +291,7 @@
                 <div class="alarm-setup">
                     <input type="time" id="alarm-time" class="alarm-picker">
                     <button class="btn-action" id="set-alarm" style="background: var(--primary);">Activer le Réveil</button>
+                    <button class="btn-action" id="stop-alarm" style="background: var(--accent); display: none;">Arrêter la sonnerie</button>
                 </div>
                 <div id="alarm-status" style="text-align: center; margin-top: 10px; font-weight: 600; color: var(--primary);"></div>
             </div>
@@ -402,8 +403,14 @@
 
 
     <div id="toast-container"></div>
+    
+    <!-- Audio pour le réveil -->
+    <audio id="alarm-sound" loop>
+        <source src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" type="audio/mpeg">
+    </audio>
 
     <!-- Bibliothèques externes -->
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
 
