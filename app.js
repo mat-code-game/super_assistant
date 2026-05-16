@@ -180,7 +180,7 @@ function compressImage(file) {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const MAX = 1000;
+                const MAX = 800; // Taille optimisée pour Groq Vision
                 if (width > height && width > MAX) {
                     height *= MAX / width;
                     width = MAX;
@@ -451,7 +451,7 @@ async function callGroq(apiKey, base64Image) {
     
     const prompts = {
         auto: `CONSIGNE : Identifie l'élément principal et donne les 3 infos les plus surprenantes. JSON: {"title": "Découverte", "content": "### 🔍 Objet : ...\\n### 💡 Info : ..."}`,
-        cuisine: `CONSIGNE : Liste les ingrédients et suggère une recette rapide. JSON: {"ingredients": ["..."], "title": "Cuisine", "content": "### 🥘 Recette : ..."}`,
+        cuisine: `Identifie les aliments. JSON: {"ingredients": ["..."], "title": "Cuisine", "content": "### 🥘 Recette rapide :\\n..."}`,
         budget: `Analyse ce ticket de caisse. JSON: {"merchant": "...", "date": "...", "total": "...", "currency": "€", "items": [{"name": "...", "price": "..."}]}`,
         jardinier: `CONSIGNE : Botaniste expert. Diagnostique la plante et donne un calendrier d'entretien. JSON: {"title": "Jardinier", "content": "### 🌿 Espèce : ...\\n### 🏥 Santé : ...\\n### 📅 Entretien : ..."}`,
         minecraft: `CONSIGNE : Transforme la photo en projet Minecraft (blocs + étapes). JSON: {"title": "Minecraft", "content": "### 🧱 Blocs : ...\\n### 🏗️ Étapes : ..."}`,
@@ -638,6 +638,51 @@ function renderCuisine(data) {
     }
 }
 
+async function generateFinalRecipes(ingredients) {
+    const list = document.getElementById('recipes-list');
+    if (!list) return;
+    
+    list.innerHTML = `<div class="spinner-container" style="text-align:center; padding:20px;">
+        <span class="spinner"></span><br>Création de vos recettes...
+    </div>`;
+
+    const apiKey = getApiKey();
+    if (!apiKey) return showToast("Config prise manquante", "error");
+
+    try {
+        const prompt = `En tant que Chef, propose 3 idées de recettes simples et rapides utilisant uniquement ces ingrédients : ${ingredients.join(', ')}. Réponds en Markdown avec Titre, Ingrédients et Étapes.`;
+        
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "llama-3.1-8b-instant", // Modèle plus récent et stable
+                messages: [
+                    { role: "system", content: "Tu es un chef cuisinier expert en recettes rapides." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok || !data.choices || !data.choices[0]) {
+            throw new Error(data.error?.message || "Réponse invalide de l'IA");
+        }
+
+        const content = data.choices[0].message.content;
+        list.innerHTML = `<div class="markdown-content">${marked.parse(content)}</div>`;
+        list.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (error) {
+        console.error("Erreur Cuisine Final:", error);
+        list.innerHTML = `<p style='color:var(--accent); padding:10px;'>⚠️ ${error.message}</p>`;
+    }
+}
+
+
+
 function renderBudget(data) {
     if (budgetResults) budgetResults.style.display = 'block';
     const merchantEl = document.getElementById('merchant-name');
@@ -725,58 +770,7 @@ function renderAlarm() {
 
     
     
-    async function generateFinalRecipes(selectedIngredients) {
-    const apiKey = getApiKey();
-    const generateBtn = document.getElementById('generate-recipes-btn');
-    const list = document.getElementById('recipes-list');
-
-    if (!apiKey || selectedIngredients.length === 0) return;
-
-    // Loading state local au bouton
-    const originalText = generateBtn.innerHTML;
-    generateBtn.disabled = true;
-    generateBtn.innerHTML = `<span class="spinner"></span> Recherche...`;
-    if (list) list.innerHTML = "<p style='text-align:center; opacity:0.6;'>Création de vos recettes sur mesure...</p>";
-
-    try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: [
-                    { role: "system", content: "Tu es un chef étoilé expert en cuisine rapide et créative." },
-                    { role: "user", content: `Propose 3 recettes simples et délicieuses en utilisant PRIORITAIREMENT ces ingrédients : ${selectedIngredients.join(', ')}. 
-                    Réponds UNIQUEMENT au format JSON strict : 
-                    {"recipes": [{"title": "Nom de la recette", "steps": "Instructions courtes..."}]}` }
-                ],
-                response_format: { type: "json_object" }
-            })
-        });
-
-        const result = await response.json();
-        const data = JSON.parse(result.choices[0].message.content);
-
-        if (list && data.recipes) {
-            list.innerHTML = "";
-            data.recipes.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'recipe-card';
-                card.innerHTML = `<h3>${r.title}</h3><p>${r.steps.replace(/\n/g, '<br>')}</p>`;
-                list.appendChild(card);
-            });
-            list.scrollIntoView({ behavior: 'smooth' });
-        }
-    } catch (e) {
-        alert("Erreur lors de la génération des recettes.");
-    } finally {
-        generateBtn.disabled = false;
-        generateBtn.innerHTML = originalText;
-    }
-}
-
-
-// --- Système Budgétaire ---
+    // --- Système Budgétaire ---
 
 async function saveBudgetTransaction() {
     // On récupère ce qui est affiché à l'écran (au cas où l'utilisateur a corrigé manuellement)
