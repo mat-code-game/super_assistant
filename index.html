@@ -13,6 +13,37 @@
 </head>
 <body>
 
+    <!-- Écran de Configuration Initiale -->
+    <div id="privacy-modal" class="modal" style="display: flex; flex-direction: column; background: var(--bg); padding: 30px; text-align: center; z-index: 9999;">
+        <div id="step-1" style="max-width: 500px; margin: auto;">
+            <i data-lucide="shield-check" style="width: 60px; height: 60px; color: var(--primary); margin-bottom: 20px;"></i>
+            <h2 style="margin-bottom: 15px;">Bienvenue sur Super Assistant Pro</h2>
+            <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">
+                Pour protéger votre vie privée, nous avons besoin de votre accord sur notre 
+                <a href="privacy.html" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">Politique de Confidentialité</a>.
+            </p>
+            <button id="accept-privacy" class="btn-action" style="background: var(--primary); width: 100%;">
+                Accepter et Continuer
+            </button>
+        </div>
+
+        <div id="step-2" style="max-width: 500px; margin: auto; display: none;">
+            <i data-lucide="key" style="width: 60px; height: 60px; color: #f59e0b; margin-bottom: 20px;"></i>
+            <h2 style="margin-bottom: 15px;">Configuration de l'IA</h2>
+            <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 20px;">
+                Cette application utilise votre propre intelligence artificielle pour garantir une totale confidentialité.
+                C'est <strong>gratuit</strong> et rapide !
+            </p>
+            <a href="https://console.groq.com/keys" target="_blank" class="btn-secondary" style="margin-bottom: 15px; border-color: #f59e0b; color: #f59e0b; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none;">
+                <i data-lucide="external-link"></i> Obtenir ma clé gratuite
+            </a>
+            <input type="password" id="setup-api-key" placeholder="Collez votre clé gsk_..." style="width: 100%; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 15px;">
+            <button id="finish-setup" class="btn-action" style="background: var(--primary); width: 100%;">
+                Démarrer l'expérience
+            </button>
+        </div>
+    </div>
+
     <header>
         <h1>Super Assistant IA</h1>
         <p>Simplifiez votre quotidien par l'image</p>
@@ -386,8 +417,11 @@
 
             <div class="settings-section">
                 <h3>🛠️ Maintenance</h3>
-                <button class="btn-secondary" id="run-diagnostic" style="width: 100%; color: var(--secondary); border-color: var(--secondary);">
+                <button class="btn-secondary" id="run-diagnostic" style="width: 100%; color: var(--secondary); border-color: var(--secondary); margin-bottom: 10px;">
                     <i data-lucide="activity"></i> Lancer un Diagnostic
+                </button>
+                <button class="btn-secondary" id="reset-app" style="width: 100%; color: var(--accent); border-color: var(--accent); opacity: 0.7;">
+                    <i data-lucide="refresh-ccw"></i> Réinitialiser l'application
                 </button>
             </div>
 

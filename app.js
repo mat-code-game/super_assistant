@@ -65,6 +65,42 @@ window.onload = () => {
 
     const savedKey = getApiKey();
     if (savedKey) apiKeyInput.value = savedKey;
+
+    // 2. Assistant de Configuration
+    const privacyAccepted = localStorage.getItem('privacy_accepted');
+    const privacyModal = document.getElementById('privacy-modal');
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+
+    // Si tout est déjà configuré, on masque tout
+    if (privacyAccepted && savedKey) {
+        privacyModal.style.display = 'none';
+    } else if (privacyAccepted && !savedKey) {
+        // Déjà accepté la loi mais pas de clé
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+    }
+
+    // Bouton Étape 1 (Privacy)
+    document.getElementById('accept-privacy').onclick = () => {
+        localStorage.setItem('privacy_accepted', 'true');
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+    };
+
+    // Bouton Étape 2 (Clé API)
+    document.getElementById('finish-setup').onclick = () => {
+        const key = document.getElementById('setup-api-key').value.trim();
+        if (key.startsWith('gsk_')) {
+            setApiKey(key);
+            apiKeyInput.value = key;
+            privacyModal.style.display = 'none';
+            showToast("Configuration réussie !", "success");
+        } else {
+            showToast("Clé invalide (doit commencer par gsk_)", "error");
+        }
+    };
+
     initAuth();
     renderHistory();
 
@@ -1424,3 +1460,11 @@ async function runDiagnostic() {
 }
 
 document.getElementById('run-diagnostic')?.addEventListener('click', runDiagnostic);
+
+document.getElementById('reset-app')?.addEventListener('click', () => {
+    if (confirm("⚠️ ATTENTION : Cela va supprimer votre clé API, votre historique et toutes vos données. Voulez-vous continuer ?")) {
+        localStorage.clear();
+        sessionStorage.clear();
+        location.reload();
+    }
+});
