@@ -104,7 +104,12 @@
                     <i data-lucide="alarm-clock"></i>
                     <span>Réveil</span>
                 </button>
+                <button class="mode-btn" id="open-budget-dashboard" style="background: var(--glass); border-color: var(--secondary); color: var(--secondary);">
+                    <i data-lucide="pie-chart"></i>
+                    <span>Mon Bilan</span>
+                </button>
             </div>
+
         </section>
 
         <!-- Section 3: Créativité & Loisirs -->
@@ -207,10 +212,8 @@
                 <i data-lucide="search"></i>
                 <span id="btn-text">Analyser</span>
             </button>
-            <button class="btn-mic" id="voice-btn" title="Parler à l'assistant">
-                <i data-lucide="mic"></i>
-            </button>
         </div>
+
 
         <!-- Zone de résultats dynamiques -->
         <section id="results" style="position: relative;">
@@ -219,19 +222,26 @@
             </div>
             <div id="cuisine-results" style="display: none;">
                 <div class="result-header">
-                    <h2>🥘 Suggestions de Recettes</h2>
-                    <p id="found-ingredients" style="font-size: 0.9rem; margin-top: 5px;"></p>
+                    <h2>🥘 Ingrédients détectés</h2>
+                    <p style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 12px;">Touchez les aliments que vous voulez cuisiner :</p>
+                    <div id="ingredients-selection" class="tag-cloud"></div>
+                    
+                    <button id="generate-recipes-btn" class="btn-action" style="margin-top: 20px; background: var(--primary); display: none;">
+                        <i data-lucide="chef-hat"></i> Trouver des recettes
+                    </button>
                 </div>
-                <div id="recipes-list"></div>
+                <div id="recipes-list" class="recipes-container"></div>
             </div>
+
 
             <div id="budget-results" style="display: none;">
                 <div class="result-header">
                     <h2>🧾 Analyse du Ticket</h2>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                        <span id="merchant-name" style="font-weight: 800; font-size: 1.2rem;">Commerce</span>
-                        <span id="total-price" class="total-badge">0.00€</span>
+                        <span id="merchant-name" contenteditable="true" style="font-weight: 800; font-size: 1.2rem; border-bottom: 1px dashed var(--secondary); padding: 2px 5px;" title="Cliquez pour corriger le nom">Commerce</span>
+                        <span id="total-price" contenteditable="true" class="total-badge" title="Cliquez pour corriger le prix">0.00€</span>
                     </div>
+
                     <p id="ticket-date" style="font-size: 0.8rem; opacity: 0.6; margin-top: 5px;"></p>
                 </div>
                 <table class="budget-table">
@@ -243,7 +253,28 @@
                     </thead>
                     <tbody id="items-list"></tbody>
                 </table>
+                <button id="save-budget-btn" class="btn-action" style="margin-top: 20px; background: var(--secondary);">
+                    <i data-lucide="save"></i> Enregistrer la dépense
+                </button>
             </div>
+
+            <div id="budget-dashboard" style="display: none;">
+                <div class="result-header">
+                    <h2>📊 Mon Bilan Budget</h2>
+                    <p>Total cumulé de vos dépenses enregistrées.</p>
+                </div>
+                <div class="budget-summary-card">
+                    <span class="summary-label">Total Dépensé</span>
+                    <span id="budget-total-sum" class="summary-value">0.00€</span>
+                </div>
+                <div class="history-list" id="budget-transactions-list" style="margin-top: 20px;">
+                    <!-- Liste des transactions -->
+                </div>
+                <button id="clear-budget-btn" class="btn-secondary" style="color: var(--accent); border-color: var(--accent); margin-top: 20px;">
+                    <i data-lucide="trash-2"></i> Effacer mon bilan
+                </button>
+            </div>
+
 
             <div id="generic-results" style="display: none;">
                 <div class="result-header">
@@ -289,12 +320,6 @@
                 </div>
             </div>
 
-            <!-- Actions sur le résultat -->
-            <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; padding: 0 5px;">
-                <button id="share-result" class="btn-secondary" style="flex: 1; min-width: 140px;">
-                    <i data-lucide="share-2"></i> Partager
-                </button>
-            </div>
         </section>
 
         <button class="btn-secondary" id="show-history">
@@ -371,11 +396,18 @@
                 <button class="btn-action" id="save-key" style="background: var(--accent); flex: 1;">Enregistrer</button>
                 <button class="btn-action" id="close-modal" style="background: var(--glass); color: var(--text); flex: 1;">Fermer</button>
             </div>
+
         </div>
     </div>
 
 
+    <div id="toast-container"></div>
+
+    <!-- Bibliothèques externes -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
+
+
     <script>
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();

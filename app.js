@@ -62,6 +62,7 @@ window.onload = () => {
     if (savedKey) apiKeyInput.value = savedKey;
     initAuth();
     renderHistory();
+
     loadChatHistory();
     loadCustomBackground();
     initTheme();
@@ -159,6 +160,17 @@ const handleImage = async (e) => {
 cameraInput.addEventListener('change', handleImage);
 galleryInput.addEventListener('change', handleImage);
 
+document.getElementById('change-img-btn')?.addEventListener('click', () => {
+    selectedImageBase64 = null;
+    preview.style.display = 'none';
+    preview.src = '';
+    dropZone.classList.remove('has-image');
+    analyzeBtn.disabled = true;
+    cameraInput.value = '';
+    galleryInput.value = '';
+});
+
+
 function compressImage(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -197,13 +209,14 @@ analyzeBtn.addEventListener('click', async () => {
     }
 
     setLoading(true);
-    resultsArea.style.display = 'none';
+    if (resultsArea) resultsArea.style.display = 'none';
 
     try {
         const response = await callGroq(apiKey, selectedImageBase64);
         displayResults(response);
     } catch (error) {
-        alert("Erreur : " + error.message);
+        console.error("Détails de l'erreur:", error);
+        alert("⚠️ Problème : " + error.message);
     } finally {
         setLoading(false);
     }
@@ -423,7 +436,9 @@ function loadCustomBackground() {
 
 // --- Functions ---
 
-function setLoading(isLoading, text = "Analyse...") {
+function setLoading(isLoading, text = "Analyse en cours...") {
+    const analyzeBtn = document.getElementById('analyze-btn');
+    if (!analyzeBtn) return;
     analyzeBtn.disabled = isLoading;
     const btnText = document.getElementById('btn-text');
     if (btnText) {
@@ -434,125 +449,35 @@ function setLoading(isLoading, text = "Analyse...") {
 async function callGroq(apiKey, base64Image) {
     const base64Data = base64Image.split(',')[1];
     
-    let prompt = "";
-    if (currentMode === 'auto') {
-        prompt = `Analyse cette image sans contexte préalable. 
-        1. Identifie ce que c'est de façon précise. 
-        2. Donne les informations les plus utiles selon l'objet (recette si nourriture, calcul si maths, conseils si objet, mode si vêtement, etc.).
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Analyse Magique", "content": "### Objet détecté : ... ### Détails..."}`;
-    } else if (currentMode === 'musique') {
-        prompt = `Analyse cette photo liée à la musique (partition, paroles, instrument). 
-        1. Si c'est une partition : explique la tonalité et les premières notes. 
-        2. Si c'est des paroles : traduis-les et explique le sens. 
-        3. Si c'est un instrument : donne 3 conseils pour débutant.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Assistant Musique", "content": "### Analyse... ### Conseils..."}`;
-    } else if (currentMode === 'cuisine') {
-        prompt = `Analyse cette photo de nourriture. Liste les ingrédients principaux et propose 3 recettes simples (Titre + Étapes). 
-        Réponds UNIQUEMENT au format JSON : 
-        {"ingredients": ["..."], "recipes": [{"title": "...", "steps": "..."}]}`;
-    } else if (currentMode === 'jardinier') {
-        prompt = `Analyse cette plante. Identifie l'espèce, son état de santé et donne 3 conseils d'entretien (arrosage, lumière, rempotage).
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Expert Jardinage", "content": "### Plante : ... ### État : ... ### Conseils : ..."}`;
-    } else if (currentMode === 'budget') {
-        prompt = `Analyse ce ticket de caisse. Extrait le marchand, la date, le total et les articles.
-        Réponds UNIQUEMENT au format JSON :
-        {"merchant": "...", "date": "...", "total": "...", "currency": "€", "items": [{"name": "...", "price": "..."}]}`;
-    } else if (currentMode === 'minecraft') {
-        prompt = `Analyse cette photo. Donne les instructions pour la reproduire dans Minecraft : 
-        1. Liste des blocs nécessaires. 
-        2. Plan de construction étape par étape.
-        3. Astuces de décoration.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Projet Minecraft", "content": "### Matériaux... ### Étapes..."}`;
-    } else if (currentMode === 'etudes') {
-        prompt = `Analyse cet exercice. Explique la méthode de résolution sans donner la réponse finale.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Aide aux Études", "content": "### Concept... ### Méthode..."}`;
-    } else if (currentMode === 'dev') {
-        prompt = `Analyse ce code. Transcris-le et propose des corrections ou explications.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Analyse de Code", "content": "### Code... ### Explications..."}`;
-    } else if (currentMode === 'style') {
-        prompt = `Analyse ce look. Donne un avis sur les couleurs et suggère des accessoires.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Conseils Style", "content": "### Analyse... ### Suggestions..."}`;
-    } else if (currentMode === 'puzzles') {
-        prompt = `Analyse ce puzzle (Sudoku, jeu, etc.). Donne le prochain coup ou la solution.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Solution Puzzle", "content": "### Analyse... ### Solution..."}`;
-    } else if (currentMode === 'humeur') {
-        prompt = `Analyse cette photo de visage. Détermine l'humeur dominante (joyeux, triste, neutre, etc.). Suggère un genre musical et un conseil positif.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Analyse Humeur", "content": "### Humeur détectée... ### Conseil..."}`;
-    } else if (currentMode === 'art') {
-        prompt = `Analyse ce dessin ou cette œuvre. Décris le style et le sujet de façon poétique. Donne 3 conseils pour l'améliorer.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Analyse Artistique", "content": "### Style... ### Conseils..."}`;
-    } else if (currentMode === 'insectes') {
-        prompt = `Analyse cette photo d'insecte. Identifie-le. Précise s'il est inoffensif ou utile. Donne une anecdote intéressante.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Expert Insectes", "content": "### Espèce... ### Utilité... ### Anecdote..."}`;
-    } else if (currentMode === 'histoires') {
-        prompt = `Analyse cet objet ou ce lieu. Invente une mini-histoire fantastique courte dont cet élément est le héros.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Histoire Instantanée", "content": "### L'histoire..."}`;
-    } else if (currentMode === 'jdr') {
-        prompt = `Analyse cette figurine ou ce personnage. Crée une fiche de personnage RPG : Nom, PV, Force, Magie et une capacité.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Fiche JDR", "content": "### Statistiques... ### Histoire..."}`;
-    } else if (currentMode === 'nutrition') {
-        prompt = `Analyse ce plat ou cet aliment. Donne les bienfaits nutritionnels et une astuce santé.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Coach Nutrition", "content": "### Bienfaits... ### Astuce..."}`;
-    } else if (currentMode === 'quiz') {
-        prompt = `Analyse ce document ou ce texte. Génère un quiz de 5 questions pour tester la compréhension.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Quiz Rapide", "content": "### Questions..."}`;
-    } else if (currentMode === 'notes') {
-        prompt = `Analyse cette liste ou ces notes. Extrais les éléments sous forme de liste de tâches.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Ma Liste", "items": ["...", "..."]}`;
-    } else if (currentMode === 'tri') {
-        prompt = `Analyse cet objet ou emballage. Dis dans quelle poubelle (Jaune, Vert, Gris, Déchetterie) il doit aller.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Guide de Tri", "content": "### Poubelle... ### Pourquoi..."}`;
-    } else if (currentMode === 'taches') {
-        prompt = `Analyse cette tache sur un tissu. Identifie-la et donne une astuce pour l'enlever.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Expert Anti-Taches", "content": "### Tache... ### Solution..."}`;
-    } else if (currentMode === 'sante') {
-        prompt = `Analyse cette boîte de médicament. Résume son usage et donne les précautions majeures. Ajoute 'Demandez à un médecin'.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Mémo Santé", "content": "### Usage... ### Précautions..."}`;
-    } else if (currentMode === 'energie') {
-        prompt = `Analyse cette pièce ou appareil. Donne un conseil concret pour économiser de l'énergie ici.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Éco-Conseil", "content": "### Astuce..."}`;
-    } else if (currentMode === 'traduction') {
-        prompt = `Analyse le texte présent sur cette image. 
-        1. Transcris le texte original. 
-        2. Traduis-le en Français de façon naturelle. 
-        3. Explique brièvement le contexte ou des points culturels si nécessaire.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Traducteur Visuel", "content": "### Texte Original... ### Traduction... ### Notes..."}`;
-    } else if (currentMode === 'qr') {
-        prompt = `Analyse ce QR Code ou code-barres. 
-        1. Décode le contenu (URL, texte, etc.). 
-        2. Si c'est une URL, explique où elle mène. 
-        3. Donne un conseil de sécurité ou une description de ce que l'utilisateur va trouver.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Lecteur Intelligent", "content": "### Contenu détecté... ### Analyse... ### Conseil..."}`;
-    } else if (currentMode === 'monuments') {
-        prompt = `Analyse cette photo de monument ou lieu historique. Identifie-le et raconte son histoire de façon intéressante.
-        Réponds UNIQUEMENT au format JSON :
-        {"title": "Guide Touristique", "content": "### Monument... ### Histoire..."}`;
-    } else if (currentMode === 'alarm') {
-        // Le mode alarme est géré par l'interface spéciale
-        return;
-    }
+    const prompts = {
+        auto: `CONSIGNE : Identifie l'élément principal et donne les 3 infos les plus surprenantes. JSON: {"title": "Découverte", "content": "### 🔍 Objet : ...\\n### 💡 Info : ..."}`,
+        cuisine: `CONSIGNE : Liste les ingrédients et suggère une recette rapide. JSON: {"ingredients": ["..."], "title": "Cuisine", "content": "### 🥘 Recette : ..."}`,
+        budget: `Analyse ce ticket de caisse. JSON: {"merchant": "...", "date": "...", "total": "...", "currency": "€", "items": [{"name": "...", "price": "..."}]}`,
+        jardinier: `CONSIGNE : Botaniste expert. Diagnostique la plante et donne un calendrier d'entretien. JSON: {"title": "Jardinier", "content": "### 🌿 Espèce : ...\\n### 🏥 Santé : ...\\n### 📅 Entretien : ..."}`,
+        minecraft: `CONSIGNE : Transforme la photo en projet Minecraft (blocs + étapes). JSON: {"title": "Minecraft", "content": "### 🧱 Blocs : ...\\n### 🏗️ Étapes : ..."}`,
+        nutrition: `CONSIGNE : Nutritionniste. Donne calories et Nutri-Score. JSON: {"title": "Nutrition", "content": "### 🍎 Calories : ...\\n### 🏆 Score : ..."}`,
+        sante: `CONSIGNE : Bien-être. Analyse et donne des conseils de prévention. JSON: {"title": "Santé", "content": "### 🩺 Observation : ...\\n### 🛡️ Prévention : ..."}`,
+        tri: `CONSIGNE : Expert Éco. Dis où jeter et donne une idée de recyclage. JSON: {"title": "Tri Éco", "content": "### ♻️ Poubelle : ...\\n### 🎨 Recyclage : ..."}`,
+        taches: `CONSIGNE : Expert Nettoyage. Donne la solution pour cette tache. JSON: {"title": "SOS Taches", "content": "### 🫧 Type : ...\\n### 🧪 Solution : ..."}`,
+        energie: `CONSIGNE : Expert Énergie. Donne une astuce pour consommer moins ici. JSON: {"title": "Énergie", "content": "### ⚡ Analyse : ...\\n### 📉 Économie : ..."}`,
+        magique: `CONSIGNE : Magicien. Explique le principe de l'illusion ou donne un indice. JSON: {"title": "Magie", "content": "### 🪄 Effet : ...\\n### 🧩 Indice : ..."}`,
+        traduction: `CONSIGNE : Traducteur. Traduis le texte et explique une expression. JSON: {"title": "Traduction", "content": "### 🌍 Traduction : ...\\n### 🗣️ Expression : ..."}`,
+        qrcode: `CONSIGNE : Décode le QR Code et analyse le lien. JSON: {"title": "QR Code", "content": "### 🔗 Lien : ...\\n### 🛡️ Sécurité : ..."}`,
+        art: `CONSIGNE : Critique d'Art. Analyse style et émotion. JSON: {"title": "Art", "content": "### 🎨 Style : ...\\n### 🎭 Émotion : ..."}`,
+        style: `CONSIGNE : Coach Style. Analyse le look et donne un conseil d'accessoire. JSON: {"title": "Style", "content": "### 👗 Look : ...\\n### 👜 Conseil : ..."}`,
+        histoires: `CONSIGNE : Historien. Raconte une anecdote passionnante sur cet objet/lieu. JSON: {"title": "Histoire", "content": "### 📜 Époque : ...\\n### 🏛️ Anecdote : ..."}`,
+        jdr: `CONSIGNE : Maître du Jeu. Crée une quête courte basée sur l'image. JSON: {"title": "JDR", "content": "### ⚔️ Quête : ...\\n### 🐲 Ennemi : ..."}`,
+        code: `CONSIGNE : Développeur. Explique le code et propose une optimisation. JSON: {"title": "Code", "content": "### 💻 Logique : ...\\n### 🚀 Optimisation : ..."}`,
+        notes: `Extrais les points clés ou crée une checklist. JSON: {"title": "Notes", "items": ["..."]}`,
+        quiz: `CONSIGNE : Créateur de Quiz. Génère 3 questions sur l'image. JSON: {"title": "Quiz", "content": "### ❓ Questions : ...\\n### 🔑 Réponses : ..."}`,
+        insectes: `CONSIGNE : Entomologiste. Identifie et donne le rôle dans la nature. JSON: {"title": "Insectes", "content": "### 🐜 Espèce : ...\\n### 🌍 Rôle : ..."}`,
+        puzzles: `CONSIGNE : Expert Enigmes. Donne la stratégie pour gagner. JSON: {"title": "Puzzle", "content": "### 🧩 Analyse : ...\\n### 🏆 Solution : ..."}`,
+        monuments: `CONSIGNE : Guide. Donne le secret caché de ce lieu. JSON: {"title": "Monuments", "content": "### 🏛️ Lieu : ...\\n### 🤫 Secret : ..."}`,
+        humeur: `CONSIGNE : Coach Positif. Analyse l'ambiance et donne un conseil Zen. JSON: {"title": "Humeur", "content": "### ✨ Ambiance : ...\\n### 🧘 Conseil : ..."}`,
+        musique: `CONSIGNE : Musicologue. Analyse la musique/instrument et donne une technique. JSON: {"title": "Musique", "content": "### 🎵 Analyse : ...\\n### 🎹 Technique : ..."}`
+    };
+
+    const prompt = prompts[currentMode] || prompts.auto;
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -562,69 +487,179 @@ async function callGroq(apiKey, base64Image) {
         },
         body: JSON.stringify({
             model: MODEL,
-            messages: [{
-                role: "user",
-                content: [
-                    { type: "text", text: prompt },
-                    { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } }
-                ]
-            }],
+            messages: [
+                {
+                    role: "system",
+                    content: "Tu es un assistant visuel expert. Réponds TOUJOURS au format JSON strict."
+                },
+                {
+                    role: "user",
+                    content: [
+                        { type: "text", text: prompt },
+                        { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } }
+                    ]
+                }
+            ],
             response_format: { type: "json_object" }
         })
     });
 
-    if (!res.ok) throw new Error("API Groq Erreur");
+    if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(`Erreur API: ${errData.error?.message || "Inconnue"}`);
+    }
     const data = await res.json();
     return JSON.parse(data.choices[0].message.content);
 }
 
-function displayResults(data, skipSave = false) {
-    console.log("Données reçues de l'IA:", data); // Debug
-    lastRawResponse = data;
-    const rawCode = document.getElementById('raw-code');
-    if (rawCode) rawCode.textContent = JSON.stringify(data, null, 2);
-    
-    // Masquer la vue code au début d'un nouveau résultat
-    document.getElementById('code-display').style.display = 'none';
-    
-    resultsArea.style.display = 'block';
-    cuisineResults.style.display = 'none';
-    budgetResults.style.display = 'none';
-    document.getElementById('notes-results').style.display = 'none';
-    document.getElementById('alarm-results').style.display = 'none';
-    document.getElementById('chat-results').style.display = 'none';
-    const genericArea = document.getElementById('generic-results');
-    genericArea.style.display = 'none';
 
-    if (currentMode === 'notes' && data.items) {
-        const area = document.getElementById('notes-results');
-        area.style.display = 'block';
-        const container = document.getElementById('checklist-container');
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'info';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'alert-circle';
+    
+    toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Copié dans le presse-papier !", "success");
+    });
+}
+
+function displayResults(data, skipSave = false) {
+    try {
+        console.log("Données reçues de l'IA:", data);
+        lastRawResponse = data;
+        
+        // Cacher tous les blocs de résultats
+        document.querySelectorAll('#results > div').forEach(div => div.style.display = 'none');
+        resultsArea.style.display = 'block';
+
+        switch(currentMode) {
+            case 'notes': renderNotes(data); break;
+            case 'cuisine': renderCuisine(data); break;
+            case 'budget': renderBudget(data); break;
+            case 'jardinier': renderGeneric(data, "🌿 Jardinage"); break;
+            case 'nutrition': renderGeneric(data, "🍎 Nutrition"); break;
+            case 'sante': renderGeneric(data, "⚕️ Santé"); break;
+            case 'tri': renderGeneric(data, "♻️ Recyclage"); break;
+            case 'taches': renderGeneric(data, "🧼 Nettoyage"); break;
+            case 'energie': renderGeneric(data, "⚡ Énergie"); break;
+            case 'magique': renderGeneric(data, "🪄 Magie"); break;
+            case 'minecraft': renderGeneric(data, "⛏️ Minecraft"); break;
+            case 'traduction': renderGeneric(data, "🌍 Traduction"); break;
+            case 'qrcode': renderGeneric(data, "🔗 Lien QR"); break;
+            case 'art': renderGeneric(data, "🎨 Art"); break;
+            case 'style': renderGeneric(data, "👗 Style"); break;
+            case 'histoires': renderGeneric(data, "📜 Histoire"); break;
+            case 'jdr': renderGeneric(data, "🎲 JDR"); break;
+            case 'code': renderGeneric(data, "💻 Code"); break;
+            case 'quiz': renderGeneric(data, "❓ Quiz"); break;
+            case 'insectes': renderGeneric(data, "🐜 Insecte"); break;
+            case 'puzzles': renderGeneric(data, "🧩 Puzzle"); break;
+            case 'monuments': renderGeneric(data, "🏛️ Monument"); break;
+            case 'humeur': renderGeneric(data, "😊 Humeur"); break;
+            default: renderGeneric(data, data.title || "Analyse"); break;
+        }
+
+
+
+        if (!skipSave && currentMode !== 'alarm' && currentMode !== 'chat') {
+            saveToHistory(currentMode, data, selectedImageBase64);
+        }
+        
+        resultsArea.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (e) {
+        console.error("Erreur d'affichage:", e);
+        showToast("Erreur lors de l'affichage des résultats.", "error");
+    }
+}
+
+function renderNotes(data) {
+    const notesRes = document.getElementById('notes-results');
+    if (notesRes) notesRes.style.display = 'block';
+    const container = document.getElementById('checklist-container');
+    if (container && data.items) {
         container.innerHTML = data.items.map(item => `
             <div class="check-item" onclick="this.classList.toggle('done'); this.querySelector('input').checked = !this.querySelector('input').checked;">
                 <input type="checkbox">
                 <span>${item}</span>
             </div>
         `).join('');
-    } else if (currentMode === 'cuisine') {
-        cuisineResults.style.display = 'block';
-        document.getElementById('found-ingredients').textContent = "Ingrédients : " + (data.ingredients ? data.ingredients.join(', ') : "Non détectés");
-        const list = document.getElementById('recipes-list');
-        list.innerHTML = "";
-        if (data.recipes) {
-            data.recipes.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'recipe-card';
-                card.innerHTML = `<h3>${r.title || "Recette"}</h3><p>${r.steps || ""}</p>`;
-                list.appendChild(card);
-            });
+    }
+}
+
+function renderCuisine(data) {
+    if (cuisineResults) cuisineResults.style.display = 'block';
+    const selectionContainer = document.getElementById('ingredients-selection');
+    const generateBtn = document.getElementById('generate-recipes-btn');
+    const list = document.getElementById('recipes-list');
+
+    if (list) list.innerHTML = "";
+    
+    if (selectionContainer && data.ingredients) {
+        selectionContainer.innerHTML = "";
+        let selectedList = [...data.ingredients];
+
+        data.ingredients.forEach(ing => {
+            const tag = document.createElement('div');
+            tag.className = 'ingredient-tag selected';
+            tag.textContent = ing;
+            tag.onclick = () => {
+                tag.classList.toggle('selected');
+                const idx = selectedList.indexOf(ing);
+                if (idx > -1) selectedList.splice(idx, 1);
+                else selectedList.push(ing);
+                generateBtn.style.display = selectedList.length > 0 ? 'flex' : 'none';
+            };
+            selectionContainer.appendChild(tag);
+        });
+
+        if (generateBtn) {
+            generateBtn.style.display = 'flex';
+            generateBtn.onclick = () => generateFinalRecipes(selectedList);
         }
-    } else if (currentMode === 'budget') {
-        budgetResults.style.display = 'block';
-        document.getElementById('merchant-name').textContent = data.merchant || "Marchand inconnu";
-        document.getElementById('total-price').textContent = (data.total || "0") + (data.currency || "€");
-        document.getElementById('ticket-date').textContent = data.date || "Date inconnue";
-        const list = document.getElementById('items-list');
+    }
+}
+
+function renderBudget(data) {
+    if (budgetResults) budgetResults.style.display = 'block';
+    const merchantEl = document.getElementById('merchant-name');
+    const totalEl = document.getElementById('total-price');
+    const dateEl = document.getElementById('ticket-date');
+    const list = document.getElementById('items-list');
+    const saveBtn = document.getElementById('save-budget-btn');
+
+    if (merchantEl) merchantEl.textContent = data.merchant || data.marchand || "Inconnu";
+    if (dateEl) dateEl.textContent = data.date || "Date inconnue";
+    
+    let total = data.total;
+    if ((!total || total == "0" || total == "0.00" || total == "0€") && data.items) {
+        const sum = data.items.reduce((acc, item) => {
+            const priceStr = item.price?.toString() || "0";
+            const price = parseFloat(priceStr.replace(/[^\d.,]/g, '').replace(',', '.') || 0);
+            return acc + price;
+        }, 0);
+        if (sum > 0) total = sum.toFixed(2);
+    }
+    
+    if (totalEl) totalEl.textContent = (total || "0.00") + (data.currency || "€");
+    if (saveBtn) saveBtn.style.display = 'flex';
+
+    if (list) {
         list.innerHTML = "";
         if (data.items) {
             data.items.forEach(item => {
@@ -633,52 +668,241 @@ function displayResults(data, skipSave = false) {
                 list.appendChild(tr);
             });
         }
-    } else if (currentMode === 'alarm') {
-        document.getElementById('alarm-results').style.display = 'block';
-        dropZone.style.display = 'none';
-        analyzeBtn.style.display = 'none';
-    } else if (currentMode === 'chat') {
-        document.getElementById('chat-results').style.display = 'block';
-        dropZone.style.display = 'none';
-        analyzeBtn.style.display = 'none';
-    } else {
-        dropZone.style.display = 'flex';
-        analyzeBtn.style.display = 'block';
-        genericArea.style.display = 'block';
-        // Fallback si les clés sont légèrement différentes
-        const title = data.title || data.nom || data.sujet || "Analyse terminée";
-        let content = data.content || data.description || data.guide || data.instructions || data;
-        
-        // Fonction récursive pour transformer n'importe quel objet en texte lisible
-        function formatRecursive(obj, level = 3) {
-            if (typeof obj !== 'object' || obj === null) return obj;
-            if (Array.isArray(obj)) return obj.map(item => formatRecursive(item, level)).join('\n');
-            
-            return Object.entries(obj).map(([key, value]) => {
-                const header = "#".repeat(level) + " " + key;
-                const body = typeof value === 'object' ? formatRecursive(value, level + 1) : value;
-                return `${header}\n${body}`;
-            }).join('\n\n');
-        }
-
-        const formattedContent = formatRecursive(content)
-            .replace(/\n/g, '<br>')
-            .replace(/###+ (.*)/g, '<h3>$1</h3>'); // Transforme les niveaux de # en titres
-            
-        document.getElementById('generic-title').textContent = title;
-        document.getElementById('generic-content').innerHTML = formattedContent;
     }
-    
-    
-    // Sauvegarder dans l'historique (sauf pour alarme, chat ou si on vient déjà de l'historique)
-    if (!skipSave && currentMode !== 'alarm' && currentMode !== 'chat') {
-        saveToHistory(currentMode, data, selectedImageBase64);
-    }
-
-    resultsArea.scrollIntoView({ behavior: 'smooth' });
 }
 
+function renderGeneric(data, title) {
+    const genericRes = document.getElementById('generic-results');
+    const genericTitle = document.getElementById('generic-title');
+    const genericContent = document.getElementById('generic-content');
+    if (genericRes) genericRes.style.display = 'block';
+    if (genericTitle) genericTitle.textContent = title;
+    
+    // Extraction sécurisée du contenu (on cherche 'content' ou 'description' ou 'instructions')
+    let rawContent = data.content || data.description || data.guide || data.instructions || data.analysis || data;
+    
+    let finalMarkdown = "";
+    
+    if (typeof rawContent === 'string') {
+        finalMarkdown = rawContent;
+    } else if (typeof rawContent === 'object' && rawContent !== null) {
+        // Si c'est un objet complexe, on formate chaque clé proprement
+        finalMarkdown = Object.entries(rawContent)
+            .filter(([k]) => k !== 'title')
+            .map(([k, v]) => `### ${k.charAt(0).toUpperCase() + k.slice(1)}\n${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`)
+            .join('\n\n');
+    }
+ else {
+        finalMarkdown = String(rawContent);
+    }
+    
+    if (genericContent) {
+        genericContent.innerHTML = marked.parse(finalMarkdown);
+    }
+}
+
+
+    
+    
+    async function generateFinalRecipes(selectedIngredients) {
+    const apiKey = getApiKey();
+    const generateBtn = document.getElementById('generate-recipes-btn');
+    const list = document.getElementById('recipes-list');
+
+    if (!apiKey || selectedIngredients.length === 0) return;
+
+    // Loading state local au bouton
+    const originalText = generateBtn.innerHTML;
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = `<span class="spinner"></span> Recherche...`;
+    if (list) list.innerHTML = "<p style='text-align:center; opacity:0.6;'>Création de vos recettes sur mesure...</p>";
+
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: MODEL,
+                messages: [
+                    { role: "system", content: "Tu es un chef étoilé expert en cuisine rapide et créative." },
+                    { role: "user", content: `Propose 3 recettes simples et délicieuses en utilisant PRIORITAIREMENT ces ingrédients : ${selectedIngredients.join(', ')}. 
+                    Réponds UNIQUEMENT au format JSON strict : 
+                    {"recipes": [{"title": "Nom de la recette", "steps": "Instructions courtes..."}]}` }
+                ],
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const result = await response.json();
+        const data = JSON.parse(result.choices[0].message.content);
+
+        if (list && data.recipes) {
+            list.innerHTML = "";
+            data.recipes.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.innerHTML = `<h3>${r.title}</h3><p>${r.steps.replace(/\n/g, '<br>')}</p>`;
+                list.appendChild(card);
+            });
+            list.scrollIntoView({ behavior: 'smooth' });
+        }
+    } catch (e) {
+        alert("Erreur lors de la génération des recettes.");
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = originalText;
+    }
+}
+
+
+// --- Système Budgétaire ---
+
+async function saveBudgetTransaction() {
+    // On récupère ce qui est affiché à l'écran (au cas où l'utilisateur a corrigé manuellement)
+    const merchantVal = document.getElementById('merchant-name').textContent;
+    const totalVal = document.getElementById('total-price').textContent;
+    
+    if (!merchantVal || !totalVal || totalVal === "0.00€") {
+        alert("⚠️ Aucune donnée valide à enregistrer.");
+        return;
+    }
+
+    const saveBtn = document.getElementById('save-budget-btn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner"></span> Enregistrement...`;
+
+    // Nettoyage du montant affiché
+    const cleanAmount = parseFloat(totalVal.replace(/[^\d.,]/g, '').replace(',', '.'));
+
+    const transaction = {
+        merchant: merchantVal,
+        amount: cleanAmount,
+        date: lastRawResponse?.date || new Date().toLocaleDateString('fr-FR'),
+        items: lastRawResponse?.items || [], // On enregistre la liste complète
+        user_pseudo: currentPseudo,
+        created_at: new Date().toISOString()
+    };
+
+
+
+    try {
+        if (supabaseClient) {
+            const { error } = await supabaseClient
+                .from('budget_transactions')
+                .insert([transaction]);
+            if (error) throw error;
+        } else {
+            let localBudget = JSON.parse(localStorage.getItem('local_budget') || '[]');
+            localBudget.unshift(transaction);
+            localStorage.setItem('local_budget', JSON.stringify(localBudget));
+        }
+        
+        alert("✅ Dépense de " + cleanAmount + "€ enregistrée !");
+        saveBtn.style.display = 'none';
+    } catch (e) {
+        console.error("Erreur sauvegarde budget:", e);
+        alert("Erreur lors de la sauvegarde.");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+    }
+}
+
+
+async function loadBudgetDashboard() {
+    const dash = document.getElementById('budget-dashboard');
+    const results = document.getElementById('results');
+    const totalEl = document.getElementById('budget-total-sum');
+    const listEl = document.getElementById('budget-transactions-list');
+
+    // Masquer les autres
+    document.querySelectorAll('#results > div').forEach(div => div.style.display = 'none');
+    dash.style.display = 'block';
+    results.style.display = 'block';
+
+    let transactions = [];
+    try {
+        if (supabaseClient) {
+            let query = supabaseClient.from('budget_transactions').select('*');
+            if (currentPseudo) query = query.eq('user_pseudo', currentPseudo);
+            else query = query.is('user_pseudo', null);
+            
+            const { data, error } = await query.order('created_at', { ascending: false });
+            if (!error) transactions = data;
+        } else {
+            transactions = JSON.parse(localStorage.getItem('local_budget') || '[]');
+        }
+    } catch (e) {
+        transactions = JSON.parse(localStorage.getItem('local_budget') || '[]');
+    }
+
+    const total = transactions.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    totalEl.textContent = total.toFixed(2) + "€";
+
+    if (transactions.length === 0) {
+        listEl.innerHTML = "<p style='opacity:0.5; text-align:center;'>Aucune dépense enregistrée.</p>";
+    } else {
+        listEl.innerHTML = transactions.map((t, i) => `
+            <div class="transaction-card" onclick="toggleTransactionDetails(${i})">
+                <div class="transaction-item">
+                    <div class="trans-info">
+                        <span class="trans-merchant">${t.merchant}</span>
+                        <span class="trans-date">${t.date}</span>
+                    </div>
+                    <span class="trans-amount">${parseFloat(t.amount).toFixed(2)}€</span>
+                </div>
+                <div id="details-${i}" class="trans-details" style="display: none;">
+                    <ul class="details-list">
+                        ${(t.items || []).map(item => `
+                            <li><span>${item.name || "Article"}</span> <span>${item.price || ""}</span></li>
+                        `).join('')}
+                    </ul>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    
+    dash.scrollIntoView({ behavior: 'smooth' });
+}
+
+window.toggleTransactionDetails = function(index) {
+    const details = document.getElementById(`details-${index}`);
+    if (details) {
+        const isHidden = details.style.display === 'none';
+        details.style.display = isHidden ? 'block' : 'none';
+    }
+};
+
+
+
+async function clearBudgetHistory() {
+    if (!confirm("Voulez-vous vraiment effacer tout votre historique budgétaire ?")) return;
+
+    try {
+        if (supabaseClient) {
+            let query = supabaseClient.from('budget_transactions').delete();
+            if (currentPseudo) query = query.eq('user_pseudo', currentPseudo);
+            else query = query.is('user_pseudo', null);
+            await query;
+        }
+        localStorage.removeItem('local_budget');
+        loadBudgetDashboard();
+    } catch (e) {
+        alert("Erreur lors de la suppression.");
+    }
+}
+
+// Listeners
+document.getElementById('save-budget-btn')?.addEventListener('click', saveBudgetTransaction);
+document.getElementById('open-budget-dashboard')?.addEventListener('click', loadBudgetDashboard);
+document.getElementById('clear-budget-btn')?.addEventListener('click', clearBudgetHistory);
+
+
+
 // --- Système d'Historique ---
+
 
 async function saveToHistory(mode, data, fullImage) {
     // Créer une miniature pour économiser le localStorage (max 5MB total)
@@ -800,45 +1024,6 @@ document.getElementById('show-history').addEventListener('click', () => {
     if (isHidden) panel.scrollIntoView({ behavior: 'smooth' });
 });
 
-// --- Reconnaissance Vocale ---
-const voiceBtn = document.getElementById('voice-btn');
-const recognition = window.SpeechRecognition || window.webkitSpeechRecognition ? new (window.SpeechRecognition || window.webkitSpeechRecognition)() : null;
-
-if (recognition) {
-    recognition.lang = 'fr-FR';
-    recognition.continuous = false;
-
-    voiceBtn.addEventListener('click', () => {
-        if (voiceBtn.classList.contains('recording')) {
-            recognition.stop();
-        } else {
-            recognition.start();
-            voiceBtn.classList.add('recording');
-        }
-    });
-
-    recognition.onresult = async (event) => {
-        const transcript = event.results[0][0].transcript;
-        voiceBtn.classList.remove('recording');
-        
-        // On bascule automatiquement sur le chat
-        currentMode = 'chat';
-        modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'chat'));
-        document.getElementById('chat-results').style.display = 'block';
-        resultsArea.style.display = 'block';
-        
-        addChatMessage('user', transcript);
-        const reply = await getAiReply(transcript);
-        addChatMessage('ai', reply);
-        speak(reply);
-    };
-
-    recognition.onerror = () => voiceBtn.classList.remove('recording');
-    recognition.onend = () => voiceBtn.classList.remove('recording');
-} else {
-    voiceBtn.style.display = 'none';
-}
-
 async function getAiReply(text) {
     const apiKey = getApiKey();
     try {
@@ -896,8 +1081,8 @@ async function triggerAlarm() {
     
     const msg = "Bonjour ! C'est l'heure de se réveiller ! Comment tu te sens ce matin ?";
     addChatMessage('ai', msg);
-    speak(msg);
 }
+
 
 function addChatMessage(role, text, skipSave = false) {
     const container = document.getElementById('chat-messages');
@@ -947,29 +1132,7 @@ document.getElementById('download-chat')?.addEventListener('click', () => {
 });
 
 
-function speak(text, articulate = false) {
-    if (!text) return;
-    
-    // Nettoyage du texte pour la synthèse vocale (enlever les astérisques, les dièses, etc.)
-    let cleanText = text
-        .replace(/[*#_]/g, '') // Enlever *, #, _
-        .replace(/\[.*?\]/g, '') // Enlever les liens markdown [texte]
-        .replace(/\(.*?\)/g, '') // Enlever les parenthèses (souvent du markdown)
-        .replace(/:.*?:/g, '') // Enlever les emojis en format :emoji:
-        .trim();
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'fr-FR';
-    utterance.rate = articulate ? 0.9 : 1.0;
-    utterance.pitch = 1.1;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(v => v.lang.startsWith('fr') && (v.name.includes('Google') || v.name.includes('Premium')));
-    if (femaleVoice) utterance.voice = femaleVoice;
-
-    window.speechSynthesis.speak(utterance);
-}
 
 
 document.getElementById('send-chat').addEventListener('click', () => handleChatSend());
@@ -993,7 +1156,7 @@ async function handleChatSend() {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
-                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche. Évite les formats markdown complexes (pas trop d'astérisques ou de listes), parle simplement comme si tu discutais à haute voix." },
+                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche. Parle de façon informelle et naturelle. Tu comprends et peux utiliser ces abréviations : cc=coucou, cv=ça va?, tfq=tu fais quoi?, tk=t'inquiète pas, slt=salut, mrc=merci, tb=très bien, ett=et toi?, etv=et vous. Évite le markdown complexe." },
                     { role: "user", content: text }
                 ]
             })
@@ -1001,8 +1164,8 @@ async function handleChatSend() {
         const data = await response.json();
         const reply = data.choices[0].message.content;
         addChatMessage('ai', reply);
-        speak(reply, true);
     } catch (e) {
+
         addChatMessage('ai', "Désolé, j'ai un petit souci de connexion...");
     }
 }
