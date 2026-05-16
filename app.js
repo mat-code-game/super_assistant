@@ -58,6 +58,11 @@ function setApiKey(key) {
 
 // --- Init ---
 window.onload = () => {
+    // 1. Enregistrement PWA (Installation mobile)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
     const savedKey = getApiKey();
     if (savedKey) apiKeyInput.value = savedKey;
     initAuth();
@@ -66,7 +71,18 @@ window.onload = () => {
     loadChatHistory();
     loadCustomBackground();
     initTheme();
+    initNightMode(); // 2. Mode Nuit Automatique
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 };
+
+function initNightMode() {
+    const hour = new Date().getHours();
+    // Mode nuit auto entre 21h et 7h
+    if (hour >= 21 || hour < 7) {
+        document.body.classList.add('night-mode-auto');
+        console.log("🌙 Mode nuit automatique activé.");
+    }
+}
 
 // --- Logic ---
 

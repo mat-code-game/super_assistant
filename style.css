@@ -13,6 +13,21 @@
     --card-bg: rgba(15, 23, 42, 0.85);
 }
 
+/* Mode Nuit Auto : Tons ambrés et plus sombres */
+body.night-mode-auto {
+    --bg: #050505;
+    --card-bg: rgba(10, 10, 10, 0.95);
+    --primary: #f59e0b; /* Ambre pour reposer les yeux */
+    --secondary: #d97706;
+    background: radial-gradient(circle at top right, #1e1b4b, #000000) fixed !important;
+}
+
+body.night-mode-auto .hub-card, 
+body.night-mode-auto .main-card {
+    border-color: rgba(245, 158, 11, 0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
 [data-theme="light"] {
     --bg: #f1f5f9;
     --card-bg: #ffffff;
