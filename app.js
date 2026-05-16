@@ -1041,6 +1041,10 @@ document.getElementById('show-history').addEventListener('click', () => {
 
 async function getAiReply(text) {
     const apiKey = getApiKey();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
     try {
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -1050,11 +1054,10 @@ async function getAiReply(text) {
                 messages: [
                     { 
                         role: "system", 
-                        content: `Aujourd'hui, nous sommes le samedi 16 mai 2026. 
-                        Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                        content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                        CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
                         Ton style : super amical, décontracté, tu tutoies systématiquement. 
-                        Quand on te demande des films ou infos 'récents', propose des choses de 2024, 2025 ou 2026. 
-                        Utilise parfois des abréviations (cc, cv, mrc, tk, slt, tb) et des emojis.` 
+                        Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
                     },
                     { role: "user", content: text }
                 ]
@@ -1307,6 +1310,10 @@ async function handleChatSend() {
     addChatMessage('user', text);
     
     const apiKey = getApiKey();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
     try {
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -1314,7 +1321,13 @@ async function handleChatSend() {
             body: JSON.stringify({
                 model: MODEL,
                 messages: [
-                    { role: "system", content: "Tu es un ami bienveillant. Sois chaleureux, motivant et parle comme un ami proche. Parle de façon informelle et naturelle. Tu comprends et peux utiliser ces abréviations : cc=coucou, cv=ça va?, tfq=tu fais quoi?, tk=t'inquiète pas, slt=salut, mrc=merci, tb=très bien, ett=et toi?, etv=et vous. Évite le markdown complexe." },
+                    { 
+                        role: "system", 
+                        content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                        CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
+                        Ton style : super amical, décontracté, tu tutoies systématiquement. 
+                        Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
+                    },
                     { role: "user", content: text }
                 ]
             })
@@ -1323,7 +1336,75 @@ async function handleChatSend() {
         const reply = data.choices[0].message.content;
         addChatMessage('ai', reply);
     } catch (e) {
-
-        addChatMessage('ai', "Désolé, j'ai un petit souci de connexion...");
+        addChatMessage('ai', "Désolé mon pote, j'ai un petit souci de connexion...");
     }
 }
+
+
+// --- SYSTÈME DE DIAGNOSTIC AUTOMATIQUE ---
+
+async function runDiagnostic() {
+    showToast("🔍 Diagnostic en cours...", "info");
+    const report = [];
+    let errors = 0;
+
+    const check = (name, condition) => {
+        if (condition) {
+            report.push(`✅ ${name}`);
+        } else {
+            report.push(`❌ ${name}`);
+            errors++;
+        }
+    };
+
+    // 1. Vérification du DOM
+    check("Bouton d'analyse présent", !!document.getElementById('analyze-btn'));
+    check("Zone de résultats présente", !!document.getElementById('results'));
+    check("Zone de chat présente", !!document.getElementById('chat-messages'));
+    check("Bouton de cuisine présent", !!document.getElementById('generate-recipes-btn'));
+
+    // 2. Vérification de la configuration
+    const key = getApiKey();
+    check("Clé API configurée", !!key);
+
+    // 3. Test de connexion API (si clé présente)
+    if (key) {
+        try {
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama-3.1-8b-instant",
+                    messages: [{ role: "user", content: "ping" }],
+                    max_tokens: 1
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                console.error("Détails erreur Groq:", err);
+            }
+            check("Connexion API Groq réussie", res.ok);
+        } catch (e) {
+            check("Connexion API Groq réussie", false);
+        }
+    }
+
+    // 4. Vérification des fonctions critiques
+    check("Fonction 'callGroq' définie", typeof callGroq === 'function');
+    check("Fonction 'generateFinalRecipes' définie", typeof generateFinalRecipes === 'function');
+    check("Fonction 'renderGeneric' définie", typeof renderGeneric === 'function');
+
+    // Affichage du rapport
+    const finalReport = report.join('\n');
+    console.log("--- RAPPORT DE DIAGNOSTIC ---\n" + finalReport);
+    
+    if (errors === 0) {
+        alert("🎉 DIAGNOSTIC RÉUSSI !\n\nToutes les fonctions sont opérationnelles.\n\n" + finalReport);
+        showToast("Tout est OK !", "success");
+    } else {
+        alert("⚠️ DIAGNOSTIC ÉCHOUÉ (" + errors + " erreurs)\n\nCertaines fonctions sont cassées.\n\n" + finalReport);
+        showToast("Problèmes détectés", "error");
+    }
+}
+
+document.getElementById('run-diagnostic')?.addEventListener('click', runDiagnostic);
