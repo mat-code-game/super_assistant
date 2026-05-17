@@ -1315,9 +1315,32 @@ function initSpeech() {
 
 function speakResponse(text) {
     const synth = window.speechSynthesis;
+    if (!synth) return;
+    
+    // Annuler toute lecture en cours pour éviter la superposition
+    if (synth.speaking) synth.cancel();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fr-FR';
     
+    // Sélectionner la voix préférée ou la meilleure disponible
+    const savedVoiceName = localStorage.getItem('preferred_voice_name');
+    const voices = synth.getVoices();
+    let selectedVoice = voices.find(v => v.name === savedVoiceName);
+    
+    if (!selectedVoice) {
+        const frVoices = voices.filter(v => v.lang.startsWith('fr'));
+        selectedVoice = getBestFrenchVoice(frVoices);
+    }
+    
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
+    }
+    
+    // Paramètres optimisés pour un rendu fluide et naturel
+    utterance.rate = 1.05; // Très légèrement plus dynamique (enlever l'effet robot monotone)
+    utterance.pitch = 1.0; // Hauteur neutre
+
     // Animation de l'avatar quand l'IA parle
     utterance.onstart = () => {
         document.getElementById('call-avatar-anim').classList.add('speaking');
@@ -1330,6 +1353,85 @@ function speakResponse(text) {
 
     synth.speak(utterance);
 }
+
+// Trouver automatiquement la voix française la plus moderne (Neural, Google, Siri Premium, etc.)
+function getBestFrenchVoice(frVoices) {
+    const priorities = [
+        v => v.name.toLowerCase().includes('google') && v.name.toLowerCase().includes('natural'),
+        v => v.name.toLowerCase().includes('google'),
+        v => v.name.toLowerCase().includes('natural'),
+        v => v.name.toLowerCase().includes('premium'),
+        v => v.name.toLowerCase().includes('neural'),
+        v => v.name.toLowerCase().includes('hortense'),
+        v => v.name.toLowerCase().includes('julie'),
+        v => v.name.toLowerCase().includes('paul'),
+        v => v.localService === true
+    ];
+    for (const predicate of priorities) {
+        const best = frVoices.find(predicate);
+        if (best) return best;
+    }
+    return frVoices[0] || null;
+}
+
+// Remplir dynamiquement le sélecteur de voix dans les paramètres
+function populateVoiceList() {
+    if (typeof speechSynthesis === 'undefined') return;
+    const voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('voice-select');
+    if (!voiceSelect) return;
+
+    const selectedVoiceName = localStorage.getItem('preferred_voice_name');
+    voiceSelect.innerHTML = '';
+
+    const frVoices = voices.filter(v => v.lang.startsWith('fr'));
+    
+    if (frVoices.length === 0) {
+        const opt = document.createElement('option');
+        opt.textContent = "Aucune voix française détectée";
+        voiceSelect.appendChild(opt);
+        return;
+    }
+
+    frVoices.forEach(voice => {
+        const option = document.createElement('option');
+        // Nettoyage esthétique des noms de voix
+        const cleanName = voice.name
+            .replace('Microsoft', 'MS')
+            .replace('Google', 'Google')
+            .replace('Desktop', '')
+            .trim();
+        option.textContent = cleanName;
+        option.value = voice.name;
+        
+        if (selectedVoiceName && voice.name === selectedVoiceName) {
+            option.selected = true;
+        }
+        voiceSelect.appendChild(option);
+    });
+
+    if (!selectedVoiceName) {
+        const best = getBestFrenchVoice(frVoices);
+        if (best) {
+            voiceSelect.value = best.name;
+            localStorage.setItem('preferred_voice_name', best.name);
+        }
+    }
+}
+
+// Gérer le changement de voix depuis les paramètres
+document.getElementById('voice-select')?.addEventListener('change', (e) => {
+    localStorage.setItem('preferred_voice_name', e.target.value);
+    speakResponse("Salut mon pote ! Tu aimes ma nouvelle voix ?");
+});
+
+if (typeof speechSynthesis !== 'undefined') {
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+    setTimeout(populateVoiceList, 600);
+}
+
 
 async function startCall() {
     const overlay = document.getElementById('call-overlay');
