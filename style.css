@@ -11,6 +11,7 @@
     --success: #10b981;
     --warning: #f59e0b;
     --card-bg: rgba(15, 23, 42, 0.85);
+    --bg-overlay: rgba(15, 23, 42, 0.75);
 }
 
 /* Mode Nuit Auto : Tons ambrés et plus sombres */
@@ -19,7 +20,11 @@ body.night-mode-auto {
     --card-bg: rgba(10, 10, 10, 0.95);
     --primary: #f59e0b; /* Ambre pour reposer les yeux */
     --secondary: #d97706;
-    background: radial-gradient(circle at top right, #1e1b4b, #000000) fixed !important;
+    --bg-overlay: rgba(5, 5, 5, 0.9);
+    background-image: 
+        linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+        radial-gradient(circle at top right, #1e1b4b, #000000);
+    background-attachment: fixed;
 }
 
 body.night-mode-auto .hub-card, 
