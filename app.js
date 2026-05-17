@@ -284,6 +284,39 @@ if (closeSettings) closeSettings.addEventListener('click', closeModal);
 const bottomCloseBtn = document.getElementById('close-modal');
 if (bottomCloseBtn) bottomCloseBtn.addEventListener('click', closeModal);
 
+const resetAppBtn = document.getElementById('reset-app');
+if (resetAppBtn) {
+    resetAppBtn.addEventListener('click', () => {
+        resetAppBtn.innerHTML = `<span class="spinner"></span> Réinitialisation en cours...`;
+        resetAppBtn.disabled = true;
+        
+        setTimeout(() => {
+            // Nettoyer les clés de configuration
+            localStorage.removeItem('privacy_accepted');
+            localStorage.removeItem(STORAGE_KEY);
+            sessionApiKey = null;
+            apiKeyInput.value = '';
+            
+            // Remettre le bouton à son état initial
+            resetAppBtn.innerHTML = `<i data-lucide="refresh-ccw"></i> Réinitialiser l'application`;
+            resetAppBtn.disabled = false;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            // Fermer les paramètres et rouvrir l'assistant de configuration
+            settingsModal.style.display = 'none';
+            const privacyModal = document.getElementById('privacy-modal');
+            const step1 = document.getElementById('step-1');
+            const step2 = document.getElementById('step-2');
+            
+            privacyModal.style.display = 'flex';
+            step1.style.display = 'block';
+            step2.style.display = 'none';
+            
+            showToast("Application réinitialisée", "success");
+        }, 1500); // Petite pause pour l'animation
+    });
+}
+
 document.getElementById('close-results').addEventListener('click', () => resultsArea.style.display = 'none');
 
 
@@ -1098,24 +1131,43 @@ async function getAiReply(text) {
     const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
     try {
+        let chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+        let apiMessages = [
+            { 
+                role: "system", 
+                content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
+                Ton style : super amical, décontracté, tu tutoies systématiquement. 
+                Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
+            }
+        ];
+        
+        // Garder les 15 derniers messages pour le contexte
+        const recentHistory = chatHistory.slice(-15);
+        recentHistory.forEach(msg => {
+            apiMessages.push({
+                role: msg.role === 'ai' ? 'assistant' : msg.role,
+                content: msg.text
+            });
+        });
+        
+        // Ajouter le message actuel (non sauvegardé par l'appel vocal)
+        apiMessages.push({ role: "user", content: text });
+
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: MODEL,
-                messages: [
-                    { 
-                        role: "system", 
-                        content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
-                        CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
-                        Ton style : super amical, décontracté, tu tutoies systématiquement. 
-                        Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
-                    },
-                    { role: "user", content: text }
-                ]
+                messages: apiMessages
             })
         });
         const data = await response.json();
+        
+        // Sauvegarder dans l'historique (pour que la discussion vocale ait une suite cohérente)
+        saveChatHistory('user', text);
+        saveChatHistory('ai', data.choices[0].message.content);
+        
         return data.choices[0].message.content;
     } catch (e) {
         return "Désolé mon pote, j'ai eu un petit bug de connexion... On réessaie ?";
@@ -1367,21 +1419,32 @@ async function handleChatSend() {
     const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
     try {
+        let chatHistory = JSON.parse(localStorage.getItem('chat_history') || '[]');
+        let apiMessages = [
+            { 
+                role: "system", 
+                content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
+                CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
+                Ton style : super amical, décontracté, tu tutoies systématiquement. 
+                Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
+            }
+        ];
+        
+        // Le message actuel est déjà dans chatHistory (via addChatMessage plus haut)
+        const recentHistory = chatHistory.slice(-15);
+        recentHistory.forEach(msg => {
+            apiMessages.push({
+                role: msg.role === 'ai' ? 'assistant' : msg.role,
+                content: msg.text
+            });
+        });
+
         const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: MODEL,
-                messages: [
-                    { 
-                        role: "system", 
-                        content: `Tu es l'Ami IA de ${currentPseudo || 'ton pote'}. 
-                        CONTEXTE TEMPOREL : Nous sommes le ${dateStr} et il est ${timeStr}.
-                        Ton style : super amical, décontracté, tu tutoies systématiquement. 
-                        Tu parles comme un ami proche sur WhatsApp. Utilise des emojis et des abréviations (cc, cv, mrc, tk, slt, tb).` 
-                    },
-                    { role: "user", content: text }
-                ]
+                messages: apiMessages
             })
         });
         const data = await response.json();
