@@ -13,14 +13,14 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-btn">← Retour à l'application</a>
+    <a href="index.html" class="back-btn" onclick="if(history.length > 1) { history.back(); return false; }">← Retour à l'application</a>
     <h1>Politique de Confidentialité</h1>
-    <p>Dernière mise à jour : 16 mai 2026</p>
+    <p>Dernière mise à jour : 17 mai 2026</p>
 
     <h2>1. Collecte des données</h2>
     <p>Super Assistant Pro traite les données suivantes uniquement pour fournir ses services d'IA :
     <ul>
-        <li>Photos (analysées par l'API Groq, non stockées de façon permanente par nous).</li>
+        <li>Photos (analysées de façon instantanée, non stockées de façon permanente).</li>
         <li>Messages du chat (stockés localement sur votre appareil ou via Supabase si vous avez un compte).</li>
     </ul>
     </p>
@@ -28,15 +28,27 @@
     <h2>2. Utilisation des données</h2>
     <p>Vos données sont utilisées exclusivement pour :
     <ul>
-        <li>Générer des réponses via l'intelligence artificielle.</li>
+        <li>Générer des réponses adaptées via l'intelligence artificielle.</li>
         <li>Mémoriser vos préférences et votre historique personnel.</li>
     </ul>
      Nous ne vendons JAMAIS vos données à des tiers.</p>
 
-    <h2>3. Vos droits</h2>
+    <h2>3. Sécurité et traitement de l'IA (API Groq)</h2>
+    <p>Les analyses de vos photos et messages sont traitées de manière hautement sécurisée via l'API de notre partenaire technologique Groq. Nous garantissons les règles de confidentialité strictes suivantes :
+    <ul>
+        <li><strong>Zéro entraînement :</strong> Vos photos, messages et documents ne sont JAMAIS utilisés pour entraîner, affiner ou améliorer les modèles d'intelligence artificielle.</li>
+        <li><strong>Rétention temporaire et suppression :</strong> Vos données transitent de façon chiffrée (HTTPS). Elles ne sont pas stockées à long terme et sont automatiquement purgées de leurs serveurs (durée de vie technique limitée uniquement à la sécurité anti-abus, puis suppression définitive).</li>
+        <li><strong>Propriété :</strong> Vous restez l'unique propriétaire de vos données textuelles et visuelles.</li>
+    </ul>
+    <div style="font-size: 0.9rem; margin-top: 15px; padding: 12px; background: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1; border-radius: 8px;">
+        ℹ️ <strong>Sécurité renforcée :</strong> Si vous souhaitez être absolument certain que Groq ne stocke pas temporairement vos données sur ses serveurs, vous pouvez activer l'option <strong>ZDR (Zero Data Retention)</strong> en cliquant sur ce lien : <a href="https://console.groq.com/settings/data-controls" target="_blank" style="color: #a855f7; text-decoration: underline; font-weight: bold;">Contrôles des données de la Console Groq</a>.
+    </div>
+    </p>
+
+    <h2>4. Vos droits</h2>
     <p>Vous pouvez à tout moment supprimer votre historique de discussion et vos données budgétaires directement depuis les paramètres de l'application.</p>
 
-    <h2>4. Contact</h2>
-    <p>Pour toute question, contactez l'équipe de développement de Super Assistant Pro.</p>
+    <h2>5. Contact</h2>
+    <p>Pour toute question concernant cette politique, contactez l'équipe de développement de Super Assistant Pro.</p>
 </body>
 </html>

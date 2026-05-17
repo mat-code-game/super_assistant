@@ -985,3 +985,50 @@ pre#raw-code::-webkit-scrollbar-thumb {
 .call-actions button:active {
     transform: scale(0.9);
 }
+
+/* --- Styles Premium & Restrictions --- */
+.mode-btn, .btn-mic {
+    position: relative;
+}
+
+/* Badge de cadenas/couronne dorée sur les boutons verrouillés */
+.premium-locked.premium-locked-active::after {
+    content: '👑';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.65rem;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: premiumPulse 2s infinite;
+    z-index: 10;
+}
+
+/* Version bouton micro spécifique */
+.btn-mic.premium-locked.premium-locked-active::after {
+    top: -3px;
+    right: -3px;
+    font-size: 0.6rem;
+    width: 16px;
+    height: 16px;
+}
+
+@keyframes premiumPulse {
+    0% { transform: scale(1); box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4); }
+    50% { transform: scale(1.1); box-shadow: 0 2px 12px rgba(245, 158, 11, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.05); }
+}
+

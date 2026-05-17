@@ -33,6 +33,7 @@ let selectedImageBase64 = null;
 let sessionApiKey = null;
 let currentPseudo = localStorage.getItem('user_pseudo') || null;
 let lastRawResponse = null;
+let isPremiumUser = false;
 const HISTORY_KEY = 'assistant_history';
 
 // --- Auth Utils ---
@@ -67,25 +68,36 @@ window.onload = () => {
     if (savedKey) apiKeyInput.value = savedKey;
 
     // 2. Assistant de Configuration
-    const privacyAccepted = localStorage.getItem('privacy_accepted');
+    const privacyAccepted = localStorage.getItem('privacy_accepted') === 'true';
     const privacyModal = document.getElementById('privacy-modal');
     const step1 = document.getElementById('step-1');
     const step2 = document.getElementById('step-2');
 
-    // Si tout est déjà configuré, on masque tout
-    if (privacyAccepted && savedKey) {
-        privacyModal.style.display = 'none';
-    } else if (privacyAccepted && !savedKey) {
-        // Déjà accepté la loi mais pas de clé
-        step1.style.display = 'none';
-        step2.style.display = 'block';
+    if (privacyModal && step1 && step2) {
+        if (privacyAccepted && savedKey && savedKey.startsWith('gsk_')) {
+            // Tout est configuré -> On masque la modale
+            privacyModal.style.display = 'none';
+        } else {
+            // Pas entièrement configuré -> Étape 1 obligatoire (Charte/Privacy) au départ
+            privacyModal.style.display = 'flex';
+            step1.style.display = 'block';
+            step2.style.display = 'none';
+        }
     }
 
     // Bouton Étape 1 (Privacy)
     document.getElementById('accept-privacy').onclick = () => {
         localStorage.setItem('privacy_accepted', 'true');
-        step1.style.display = 'none';
-        step2.style.display = 'block';
+        const key = getApiKey();
+        if (key && key.startsWith('gsk_')) {
+            // Si une clé valide existe déjà, on déverrouille directement l'application
+            if (privacyModal) privacyModal.style.display = 'none';
+            showToast("Bienvenue !", "success");
+        } else {
+            // Sinon on passe à l'étape 2
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+        }
     };
 
     // Bouton Étape 2 (Clé API)
@@ -94,7 +106,7 @@ window.onload = () => {
         if (key.startsWith('gsk_')) {
             setApiKey(key);
             apiKeyInput.value = key;
-            privacyModal.style.display = 'none';
+            if (privacyModal) privacyModal.style.display = 'none';
             showToast("Configuration réussie !", "success");
         } else {
             showToast("Clé invalide (doit commencer par gsk_)", "error");
@@ -108,6 +120,10 @@ window.onload = () => {
     loadCustomBackground();
     initTheme();
     initNightMode(); // 2. Mode Nuit Automatique
+    applyPremiumStatus(); // 3. Charger le statut Premium
+    initPremiumListeners(); // 4. Initialiser la modale Premium
+    initPrivacyPolicyListeners(); // 5. Initialiser la modale Politique de Confidentialité
+    initSettingsTabs(); // 6. Initialiser les onglets de paramètres (sans barre de défilement)
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
@@ -118,6 +134,119 @@ function initNightMode() {
         document.body.classList.add('night-mode-auto');
         console.log("🌙 Mode nuit automatique activé.");
     }
+}
+
+// Fonction pour appliquer le statut Premium dans toute l'interface
+function applyPremiumStatus() {
+    isPremiumUser = localStorage.getItem('premium_status') === 'true';
+    const statusLabel = document.getElementById('account-status-label');
+    const upgradeBtn = document.getElementById('upgrade-btn-settings');
+
+    if (isPremiumUser) {
+        if (statusLabel) statusLabel.innerHTML = '<span style="color: var(--text-muted)">Membre :</span> <span style="color: #f59e0b; font-weight: 900;">👑 Premium</span>';
+        if (upgradeBtn) upgradeBtn.style.display = 'none';
+        
+        // Enlever visuellement l'affichage des cadenas
+        document.querySelectorAll('.premium-locked').forEach(el => el.classList.remove('premium-locked-active'));
+    } else {
+        if (statusLabel) statusLabel.innerHTML = '<span style="color: var(--text-muted)">Membre :</span> Gratuit';
+        if (upgradeBtn) upgradeBtn.style.display = 'block';
+        
+        // Activer visuellement l'affichage des cadenas
+        document.querySelectorAll('.premium-locked').forEach(el => el.classList.add('premium-locked-active'));
+    }
+}
+
+// Écouteurs pour la modale Premium
+function initPremiumListeners() {
+    document.getElementById('close-premium')?.addEventListener('click', () => {
+        document.getElementById('premium-modal').style.display = 'none';
+    });
+    
+    document.getElementById('upgrade-btn-settings')?.addEventListener('click', () => {
+        document.getElementById('settings-modal').style.display = 'none';
+        document.getElementById('premium-modal').style.display = 'flex';
+    });
+    
+    document.getElementById('buy-premium-btn')?.addEventListener('click', () => {
+        localStorage.setItem('premium_status', 'true');
+        applyPremiumStatus();
+        document.getElementById('premium-modal').style.display = 'none';
+        showToast("Félicitations ! Vous êtes Premium 👑", "success");
+    });
+}
+
+// Écouteurs pour la modale de Politique de Confidentialité interne
+function initPrivacyPolicyListeners() {
+    const privacyPolicyModal = document.getElementById('privacy-policy-modal');
+    const openPrivacyPolicyLink = document.getElementById('open-privacy-policy-link');
+    const closePrivacyPolicy = document.getElementById('close-privacy-policy');
+    const closePrivacyPolicyBtn = document.getElementById('close-privacy-policy-btn');
+    const settingsViewPrivacy = document.getElementById('settings-view-privacy');
+
+    let openedFromSettings = false;
+
+    const openPrivacyModal = (e, fromSettings = false) => {
+        if (e) e.preventDefault();
+        openedFromSettings = fromSettings;
+        if (privacyPolicyModal) {
+            privacyPolicyModal.style.display = 'flex';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    };
+
+    const closePrivacyModal = () => {
+        if (privacyPolicyModal) {
+            privacyPolicyModal.style.display = 'none';
+            if (openedFromSettings) {
+                const settingsModal = document.getElementById('settings-modal');
+                if (settingsModal) settingsModal.style.display = 'flex';
+                openedFromSettings = false;
+            }
+        }
+    };
+
+    if (openPrivacyPolicyLink) openPrivacyPolicyLink.addEventListener('click', (e) => openPrivacyModal(e, false));
+    if (closePrivacyPolicy) closePrivacyPolicy.addEventListener('click', closePrivacyModal);
+    if (closePrivacyPolicyBtn) closePrivacyPolicyBtn.addEventListener('click', closePrivacyModal);
+    if (settingsViewPrivacy) {
+        settingsViewPrivacy.addEventListener('click', (e) => {
+            const settingsModal = document.getElementById('settings-modal');
+            if (settingsModal) settingsModal.style.display = 'none';
+            openPrivacyModal(e, true);
+        });
+    }
+}
+
+// Écouteurs pour les onglets des paramètres
+function initSettingsTabs() {
+    const tabBtns = document.querySelectorAll('.settings-tab-btn');
+    const tabContents = document.querySelectorAll('.settings-tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Réinitialiser les boutons d'onglets
+            tabBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'var(--glass)';
+                b.style.color = 'var(--text-muted)';
+            });
+            // Activer le bouton cliqué
+            btn.classList.add('active');
+            btn.style.background = 'var(--primary)';
+            btn.style.color = 'white';
+
+            // Afficher le contenu lié, masquer le reste
+            const targetTab = btn.dataset.tab;
+            tabContents.forEach(content => {
+                if (content.id === `tab-content-${targetTab}`) {
+                    content.style.display = 'block';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+        });
+    });
 }
 
 // --- Logic ---
@@ -159,7 +288,14 @@ backToHub.addEventListener('click', () => {
 
 // Switch Mode
 modeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        // Intercepter si c'est un mode Premium et que l'utilisateur est gratuit
+        if (btn.classList.contains('premium-locked') && !isPremiumUser) {
+            e.stopPropagation();
+            document.getElementById('premium-modal').style.display = 'flex';
+            return;
+        }
+
         modeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
@@ -275,7 +411,12 @@ analyzeBtn.addEventListener('click', async () => {
 });
 
 // Settings Logic
-openSettings.addEventListener('click', () => settingsModal.style.display = 'flex');
+openSettings.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+    // Activer par défaut le premier onglet (IA & Look)
+    const firstTabBtn = document.querySelector('.settings-tab-btn[data-tab="ia"]');
+    if (firstTabBtn) firstTabBtn.click();
+});
 
 // Fonction pour fermer la modale
 const closeModal = () => settingsModal.style.display = 'none';
@@ -285,37 +426,6 @@ const bottomCloseBtn = document.getElementById('close-modal');
 if (bottomCloseBtn) bottomCloseBtn.addEventListener('click', closeModal);
 
 const resetAppBtn = document.getElementById('reset-app');
-if (resetAppBtn) {
-    resetAppBtn.addEventListener('click', () => {
-        resetAppBtn.innerHTML = `<span class="spinner"></span> Réinitialisation en cours...`;
-        resetAppBtn.disabled = true;
-        
-        setTimeout(() => {
-            // Nettoyer les clés de configuration
-            localStorage.removeItem('privacy_accepted');
-            localStorage.removeItem(STORAGE_KEY);
-            sessionApiKey = null;
-            apiKeyInput.value = '';
-            
-            // Remettre le bouton à son état initial
-            resetAppBtn.innerHTML = `<i data-lucide="refresh-ccw"></i> Réinitialiser l'application`;
-            resetAppBtn.disabled = false;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            
-            // Fermer les paramètres et rouvrir l'assistant de configuration
-            settingsModal.style.display = 'none';
-            const privacyModal = document.getElementById('privacy-modal');
-            const step1 = document.getElementById('step-1');
-            const step2 = document.getElementById('step-2');
-            
-            privacyModal.style.display = 'flex';
-            step1.style.display = 'block';
-            step2.style.display = 'none';
-            
-            showToast("Application réinitialisée", "success");
-        }, 1500); // Petite pause pour l'animation
-    });
-}
 
 document.getElementById('close-results').addEventListener('click', () => resultsArea.style.display = 'none');
 
@@ -502,6 +612,13 @@ function updateThemeUI(theme) {
 
 
 document.getElementById('bg-upload').addEventListener('change', async (e) => {
+    if (!isPremiumUser) {
+        e.preventDefault();
+        // Fermer les paramètres pour laisser voir la modale Premium
+        document.getElementById('settings-modal').style.display = 'none';
+        document.getElementById('premium-modal').style.display = 'flex';
+        return;
+    }
     const file = e.target.files[0];
     if (file) {
         const base64 = await compressImage(file);
@@ -1434,6 +1551,11 @@ if (typeof speechSynthesis !== 'undefined') {
 
 
 async function startCall() {
+    // Intercepter si l'utilisateur n'est pas Premium
+    if (!isPremiumUser) {
+        document.getElementById('premium-modal').style.display = 'flex';
+        return;
+    }
     const overlay = document.getElementById('call-overlay');
     overlay.style.display = 'flex';
     document.getElementById('call-status').textContent = "Connexion...";

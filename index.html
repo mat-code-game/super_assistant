@@ -21,7 +21,7 @@
             <h2 style="margin-bottom: 15px;">Bienvenue sur Super Assistant Pro</h2>
             <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 20px;">
                 Pour protéger votre vie privée, nous avons besoin de votre accord sur notre 
-                <a href="privacy.html" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">Politique de Confidentialité</a>.
+                <a href="#" id="open-privacy-policy-link" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">Politique de Confidentialité</a>.
             </p>
             <button id="accept-privacy" class="btn-action" style="background: var(--primary); width: 100%;">
                 Accepter et Continuer
@@ -41,6 +41,68 @@
             <input type="password" id="setup-api-key" placeholder="Collez votre clé gsk_..." style="width: 100%; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 15px;">
             <button id="finish-setup" class="btn-action" style="background: var(--primary); width: 100%;">
                 Démarrer l'expérience
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal pour lire la Politique de Confidentialité en détails -->
+    <div id="privacy-policy-modal" class="modal" style="display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; padding: 15px;">
+        <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; text-align: left; padding: 25px; gap: 15px; border-radius: 24px; position: relative;">
+            <div class="close-btn" id="close-privacy-policy" title="Fermer">
+                <i data-lucide="x"></i>
+            </div>
+            
+            <h2 style="color: var(--primary); font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="shield-check" style="color: var(--primary); width: 28px; height: 28px;"></i> Politique de Confidentialité
+            </h2>
+            <p style="font-size: 0.8rem; opacity: 0.6; margin-bottom: 15px;">Dernière mise à jour : 17 mai 2026</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; font-size: 0.9rem; line-height: 1.6;">
+                <div>
+                    <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 5px;">1. Collecte des données</h3>
+                    <p style="opacity: 0.9;">Super Assistant Pro traite les données suivantes uniquement pour fournir ses services d'IA :</p>
+                    <ul style="margin-left: 20px; margin-top: 5px; opacity: 0.9; list-style-type: disc;">
+                        <li>Photos (analysées de façon instantanée, non stockées de façon permanente).</li>
+                        <li>Messages du chat (stockés localement sur votre appareil ou via Supabase si vous avez un compte).</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 5px;">2. Utilisation des données</h3>
+                    <p style="opacity: 0.9;">Vos données sont utilisées exclusivement pour :</p>
+                    <ul style="margin-left: 20px; margin-top: 5px; opacity: 0.9; list-style-type: disc;">
+                        <li>Générer des réponses adaptées via l'intelligence artificielle.</li>
+                        <li>Mémoriser vos préférences et votre historique personnel.</li>
+                    </ul>
+                    <p style="margin-top: 8px; font-weight: bold; color: var(--accent);">Nous ne vendons JAMAIS vos données à des tiers.</p>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 5px;">3. Sécurité et traitement (API Groq)</h3>
+                    <p style="opacity: 0.9;">Les analyses de vos photos et messages sont traitées de manière hautement sécurisée via l'API de notre partenaire Groq :</p>
+                    <ul style="margin-left: 20px; margin-top: 5px; opacity: 0.9; list-style-type: disc;">
+                        <li><strong>Zéro entraînement :</strong> Vos données ne sont JAMAIS utilisées pour entraîner ou améliorer les modèles d'IA.</li>
+                        <li><strong>Rétention temporaire :</strong> Les données transitent de façon chiffrée (HTTPS) et sont purgées des serveurs automatiquement après traitement.</li>
+                        <li><strong>Propriété :</strong> Vous restez l'unique propriétaire de vos données.</li>
+                    </ul>
+                    <div style="font-size: 0.8rem; margin-top: 10px; padding: 12px; background: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1; border-radius: 8px;">
+                        ℹ️ Pour activer l'option <strong>ZDR (Zero Data Retention)</strong> de Groq, visitez : <a href="https://console.groq.com/settings/data-controls" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: bold;">Contrôles des données Groq</a>.
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 5px;">4. Vos droits</h3>
+                    <p style="opacity: 0.9;">Vous pouvez supprimer votre historique et vos données à tout moment depuis les paramètres de l'application.</p>
+                </div>
+                
+                <div>
+                    <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 5px;">5. Contact</h3>
+                    <p style="opacity: 0.9;">Pour toute question, contactez l'équipe de développement de Super Assistant Pro.</p>
+                </div>
+            </div>
+            
+            <button id="close-privacy-policy-btn" class="btn-action" style="margin-top: 20px; background: var(--primary); width: 100%;">
+                Fermer
             </button>
         </div>
     </div>
@@ -106,11 +168,11 @@
         <section class="category-block" id="cat-daily" style="display: none;">
             <h2 class="category-title">🏠 Vie Quotidienne</h2>
             <div class="mode-grid">
-                <button class="mode-btn" data-mode="cuisine">
+                <button class="mode-btn premium-locked" data-mode="cuisine">
                     <i data-lucide="utensils"></i>
                     <span>Cuisine</span>
                 </button>
-                <button class="mode-btn" data-mode="budget">
+                <button class="mode-btn premium-locked" data-mode="budget">
                     <i data-lucide="wallet"></i>
                     <span>Budget</span>
                 </button>
@@ -122,7 +184,7 @@
                     <i data-lucide="pill"></i>
                     <span>Santé</span>
                 </button>
-                <button class="mode-btn" data-mode="tri">
+                <button class="mode-btn premium-locked" data-mode="tri">
                     <i data-lucide="recycle"></i>
                     <span>Tri</span>
                 </button>
@@ -158,7 +220,7 @@
                     <i data-lucide="palette"></i>
                     <span>Art</span>
                 </button>
-                <button class="mode-btn" data-mode="style">
+                <button class="mode-btn premium-locked" data-mode="style">
                     <i data-lucide="shirt"></i>
                     <span>Style</span>
                 </button>
@@ -197,11 +259,11 @@
                     <i data-lucide="help-circle"></i>
                     <span>Quiz</span>
                 </button>
-                <button class="mode-btn" data-mode="insectes">
+                <button class="mode-btn premium-locked" data-mode="insectes">
                     <i data-lucide="bug"></i>
                     <span>Insectes</span>
                 </button>
-                <button class="mode-btn" data-mode="jardinier">
+                <button class="mode-btn premium-locked" data-mode="jardinier">
                     <i data-lucide="leaf"></i>
                     <span>Jardinier</span>
                 </button>
@@ -209,7 +271,7 @@
                     <i data-lucide="puzzle"></i>
                     <span>Puzzles</span>
                 </button>
-                <button class="mode-btn" data-mode="monuments">
+                <button class="mode-btn premium-locked" data-mode="monuments">
                     <i data-lucide="landmark"></i>
                     <span>Monuments</span>
                 </button>
@@ -345,7 +407,7 @@
                         <p>Discutez avec votre pote.</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button id="call-ai" class="btn-mic" style="width: 40px; height: 40px; background: var(--secondary); color: white;" title="Appeler l'IA">
+                        <button id="call-ai" class="btn-mic premium-locked" style="width: 40px; height: 40px; background: var(--secondary); color: white;" title="Appeler l'IA">
                             <i data-lucide="phone"></i>
                         </button>
                         <button id="download-chat" class="btn-mic" style="width: 40px; height: 40px; background: var(--glass);" title="Télécharger la discussion">
@@ -402,8 +464,8 @@
     </div>
 
     <div class="modal" id="settings-modal">
-        <div class="modal-content" style="position: relative;">
-            <div class="modal-header">
+        <div class="modal-content" style="position: relative; max-width: 400px; padding: 20px; gap: 8px;">
+            <div class="modal-header" style="margin-bottom: 8px; padding-bottom: 6px;">
                 <h2>Configuration</h2>
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div id="user-badge" class="user-badge" style="display: none;">
@@ -416,66 +478,134 @@
                 </div>
             </div>
 
-            <div class="settings-section">
-                <h3>🛠️ Maintenance</h3>
-                <button class="btn-secondary" id="run-diagnostic" style="width: 100%; color: var(--secondary); border-color: var(--secondary); margin-bottom: 10px;">
-                    <i data-lucide="activity"></i> Lancer un Diagnostic
+            <!-- Onglets de Navigation -->
+            <div class="settings-tabs" style="display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">
+                <button type="button" class="settings-tab-btn active" data-tab="ia" style="flex: 1; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--primary); color: white; font-weight: 800; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                    <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i> IA & Look
                 </button>
-                <button class="btn-secondary" id="reset-app" style="width: 100%; color: var(--accent); border-color: var(--accent); opacity: 0.7;">
-                    <i data-lucide="refresh-ccw"></i> Réinitialiser l'application
+                <button type="button" class="settings-tab-btn" data-tab="compte" style="flex: 1; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-muted); font-weight: 800; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                    <i data-lucide="user" style="width: 13px; height: 13px;"></i> Compte
+                </button>
+                <button type="button" class="settings-tab-btn" data-tab="outils" style="flex: 1; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--text-muted); font-weight: 800; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+                    <i data-lucide="wrench" style="width: 13px; height: 13px;"></i> Outils
                 </button>
             </div>
 
-            <div class="settings-section">
-                <h3>🔑 Mon Compte</h3>
-                <div id="login-view">
-                    <input type="text" id="pseudo-input" placeholder="Pseudo">
-                    <div style="position: relative; width: 100%;">
-                        <input type="password" id="password-input" placeholder="Mot de passe" style="padding-right: 45px;">
-                        <button id="toggle-password" class="btn-icon" style="position: absolute; right: 10px; top: 18px; background: none; border: none; color: var(--text-muted); cursor: pointer;">
-                            <i data-lucide="eye"></i>
+            <!-- Contenu Onglet 1: IA & Style -->
+            <div id="tab-content-ia" class="settings-tab-content">
+                <div class="settings-section" style="margin-bottom: 8px;">
+                    <h3>⚙️ Clé API Groq</h3>
+                    <input type="password" id="api-key-input" placeholder="gsk_..." style="margin: 2px 0 0 0; padding: 8px 10px; font-size: 0.85rem;">
+                </div>
+                
+                <div class="settings-section" style="margin-bottom: 8px;">
+                    <h3>🌙 Thème & Fond</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 2px;">
+                        <button type="button" id="theme-toggle" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 8px; font-size: 0.8rem; border-radius: 10px;">
+                            <i data-lucide="moon" style="width: 14px; height: 14px;"></i> <span>Thème</span>
                         </button>
+                        <label class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; margin: 0; padding: 8px; font-size: 0.8rem; border-radius: 10px;">
+                            <i data-lucide="image" style="width: 14px; height: 14px;"></i> Fond
+                            <input type="file" id="bg-upload" accept="image/*" style="display: none;">
+                        </label>
                     </div>
-                    <button class="btn-action" id="login-btn" style="background: var(--primary);">Se connecter / S'inscrire</button>
                 </div>
-                <div id="logged-view" style="display: none;">
-                    <p style="font-size: 0.9rem; margin-bottom: 10px;">Connecté en tant que <strong id="logged-pseudo"></strong></p>
-                    <button class="btn-secondary" id="logout-btn" style="margin: 0; color: #f43f5e;">Déconnexion</button>
+                
+                <div class="settings-section" style="margin-bottom: 4px;">
+                    <h3>🗣️ Voix de l'IA (Appels)</h3>
+                    <select id="voice-select" style="width: 100%; padding: 8px 10px !important; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; color: var(--text); outline: none; cursor: pointer; font-size: 0.85rem; margin-top: 2px;"></select>
                 </div>
-                <p id="auth-error" style="color: #f43f5e; font-size: 0.75rem; margin-top: 5px; display: none;"></p>
             </div>
-            
-            <div class="settings-section">
-                <h3>⚙️ Clé API Groq</h3>
-                <input type="password" id="api-key-input" placeholder="gsk_...">
+
+            <!-- Contenu Onglet 2: Compte -->
+            <div id="tab-content-compte" class="settings-tab-content" style="display: none;">
+                <div class="settings-section" style="margin-bottom: 10px;">
+                    <h3>⭐ Statut du Compte</h3>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--glass); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--glass-border); gap: 10px; margin-top: 2px;">
+                        <span id="account-status-label" style="font-weight: 700; font-size: 0.78rem; display: flex; align-items: center; gap: 5px;">
+                            <span style="color: var(--text-muted)">Membre :</span> Gratuit
+                        </span>
+                        <button type="button" id="upgrade-btn-settings" class="btn-action" style="padding: 5px 10px; font-size: 0.7rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; flex: none;">👑 Premium</button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>🔑 Mon Compte</h3>
+                    <div id="login-view" style="margin-top: 2px;">
+                        <input type="text" id="pseudo-input" placeholder="Pseudo" style="margin: 0 0 6px 0; padding: 8px 10px; font-size: 0.85rem;">
+                        <div style="position: relative; width: 100%;">
+                            <input type="password" id="password-input" placeholder="Mot de passe" style="padding-right: 40px; margin: 0 0 8px 0; padding: 8px 10px; font-size: 0.85rem;">
+                            <button type="button" id="toggle-password" class="btn-icon" style="position: absolute; right: 10px; top: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0;">
+                                <i data-lucide="eye" style="width: 15px; height: 15px;"></i>
+                            </button>
+                        </div>
+                        <button type="button" class="btn-action" id="login-btn" style="background: var(--primary); padding: 8px 12px; font-size: 0.82rem; width: 100%; border-radius: 10px;">Se connecter / S'inscrire</button>
+                    </div>
+                    <div id="logged-view" style="display: none; margin-top: 4px;">
+                        <p style="font-size: 0.85rem; margin-bottom: 8px;">Connecté en tant que <strong id="logged-pseudo"></strong></p>
+                        <button type="button" class="btn-secondary" id="logout-btn" style="margin: 0; padding: 8px 12px; font-size: 0.82rem; color: #f43f5e; border-radius: 10px; width: 100%;">Déconnexion</button>
+                    </div>
+                    <p id="auth-error" style="color: #f43f5e; font-size: 0.72rem; margin-top: 4px; display: none;"></p>
+                </div>
             </div>
-            
-            <div class="settings-section">
-                <h3>🌙 Thème & Fond</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button id="theme-toggle" class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0;">
-                        <i data-lucide="moon"></i> <span>Thème</span>
+
+            <!-- Contenu Onglet 3: Outils -->
+            <div id="tab-content-outils" class="settings-tab-content" style="display: none;">
+                <div class="settings-section" style="display: flex; flex-direction: column; gap: 6px;">
+                    <h3>🛠️ Maintenance & Légal</h3>
+                    <button type="button" class="btn-secondary" id="settings-view-privacy" style="width: 100%; color: var(--primary); border-color: var(--primary); margin: 2px 0 0 0; padding: 8px 10px; font-size: 0.82rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i> Politique de Confidentialité
                     </button>
-                    <label class="btn-secondary" style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; margin: 0;">
-                        <i data-lucide="image"></i> Fond
-                        <input type="file" id="bg-upload" accept="image/*" style="display: none;">
-                    </label>
+                    <button type="button" class="btn-secondary" id="run-diagnostic" style="width: 100%; color: var(--secondary); border-color: var(--secondary); margin: 0; padding: 8px 10px; font-size: 0.82rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="activity" style="width: 14px; height: 14px;"></i> Lancer un Diagnostic
+                    </button>
+                    <button type="button" class="btn-secondary" id="reset-app" style="width: 100%; color: var(--accent); border-color: var(--accent); opacity: 0.8; margin: 0; padding: 8px 10px; font-size: 0.82rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="refresh-ccw" style="width: 14px; height: 14px;"></i> Réinitialiser l'application
+                    </button>
                 </div>
             </div>
-            
-            <div class="settings-section">
-                <h3>🗣️ Voix de l'IA (Appels)</h3>
-                <select id="voice-select" style="width: 100%; padding: 14px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text); outline: none; cursor: pointer;"></select>
-            </div>
 
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn-action" id="save-key" style="background: var(--accent); flex: 1;">Enregistrer</button>
-                <button class="btn-action" id="close-modal" style="background: var(--glass); color: var(--text); flex: 1;">Fermer</button>
+            <!-- Actions du bas -->
+            <div style="margin-top: 8px; display: flex; gap: 8px; border-top: 1px solid var(--glass-border); padding-top: 8px;">
+                <button type="button" class="btn-action" id="save-key" style="background: var(--accent); flex: 1; padding: 8px 12px; font-size: 0.85rem; border-radius: 10px;">Enregistrer</button>
+                <button type="button" class="btn-action" id="close-modal" style="background: var(--glass); color: var(--text); flex: 1; padding: 8px 12px; font-size: 0.85rem; border-radius: 10px;">Fermer</button>
             </div>
-
         </div>
     </div>
 
+
+    <!-- Modal Premium -->
+    <div class="modal" id="premium-modal" style="z-index: 11000;">
+        <div class="modal-content" style="text-align: center; gap: 15px; position: relative;">
+            <div class="close-btn" id="close-premium" style="top: 15px; right: 15px;">
+                <i data-lucide="x"></i>
+            </div>
+            
+            <div style="font-size: 3rem; margin-top: 10px; animation: bounce 2s infinite; display: inline-block; width: max-content;">👑</div>
+            <h2 style="background: linear-gradient(to right, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px;">Super Assistant Premium</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">Débloquez la pleine puissance de votre assistant et profitez de l'expérience ultime !</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px; text-align: left; background: rgba(0,0,0,0.15); padding: 12px; border-radius: 16px; border: 1px solid var(--glass-border);">
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 700;">
+                    <span style="color: #f59e0b;">✔</span> <span>Appels vocaux illimités (Ami IA)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 700;">
+                    <span style="color: #f59e0b;">✔</span> <span>Analyse photo (Cuisine, Plantes, Tri...)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 700;">
+                    <span style="color: #f59e0b;">✔</span> <span>Sauvegarde Cloud & Synchro multipostes</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 700;">
+                    <span style="color: #f59e0b;">✔</span> <span>Import de fonds d'écran personnalisés</span>
+                </div>
+            </div>
+            
+            <button id="buy-premium-btn" class="btn-action" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 12px; font-weight: 800; border-radius: 16px; font-size: 1rem; width: 100%; border: none; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); margin-top: 5px;">
+                Débloquer pour 1.99€ / mois
+            </button>
+            <p style="font-size: 0.7rem; opacity: 0.5; margin: 0;">Sans engagement. Résiliable à tout moment.</p>
+        </div>
+    </div>
 
     <div id="toast-container"></div>
     
