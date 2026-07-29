@@ -1,6 +1,6 @@
 // --- Configuration ---
 const STORAGE_KEY = 'groq_api_key';
-const MODEL = "qwen/qwen3.6-27b";
+const MODEL = "openai/gpt-oss-120b";
 
 // Supabase Config
 const SUPABASE_URL = "https://hedimvodzdzwnluekmtd.supabase.co";
